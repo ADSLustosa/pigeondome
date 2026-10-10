@@ -15,8 +15,8 @@ jobs:
       run:
         working-directory: backend
     steps:
-      - uses: actions/checkout@vX
-      - uses: actions/setup-python@vY
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
           cache: pip
