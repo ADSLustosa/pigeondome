@@ -218,3 +218,10 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Pigeondome
+node_modules/
+*.log
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
