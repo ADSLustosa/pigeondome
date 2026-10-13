@@ -1,0 +1,38 @@
+name: pigeondome
+
+services:
+  mosquitto:
+    image: eclipse-mosquitto:2.0.20
+    container_name: pigeondome-mqtt
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    ports:
+      - "127.0.0.1:1883:1883"
+    volumes:
+      - ./mosquitto:/mosquitto/config:ro
+      - mosquitto_data:/mosquitto/data
+
+  db:
+    image: postgres:17-alpine
+    container_name: pigeondome-db
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      POSTGRES_USER: pigeon
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?rode infra/setup.ps1 para gerar o .env}
+      POSTGRES_DB: pigeondome
+    ports:
+      - "127.0.0.1:5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pigeon -d pigeondome"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  mosquitto_data:
+  pgdata:
