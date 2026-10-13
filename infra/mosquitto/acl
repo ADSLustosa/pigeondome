@@ -1,0 +1,17 @@
+# Backend: le tudo que os dispositivos enviam e emite comandos
+user backend
+topic read pigeondome/v1/+/detections
+topic read pigeondome/v1/+/status
+topic read pigeondome/v1/+/actuator/state
+topic write pigeondome/v1/+/commands
+
+# Camera: so publica deteccoes e status
+user camera
+topic write pigeondome/v1/+/detections
+topic write pigeondome/v1/+/status
+
+# Atuador: so recebe comandos e reporta estado
+user actuator
+topic read pigeondome/v1/+/commands
+topic write pigeondome/v1/+/actuator/state
+topic write pigeondome/v1/+/status
