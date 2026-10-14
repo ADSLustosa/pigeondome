@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Detection v1",
+  "description": "Contagem de pombos detectados por uma câmera. Contém apenas métricas, nunca imagens.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "device_id", "timestamp", "pigeon_count", "confidence"],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "device_id": { "type": "string", "pattern": "^[a-z0-9-]{3,32}$" },
+    "timestamp": { "type": "string", "format": "date-time" },
+    "pigeon_count": { "type": "integer", "minimum": 0, "maximum": 50 },
+    "confidence": { "type": "number", "minimum": 0, "maximum": 1 }
+  }
+}
