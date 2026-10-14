@@ -1,0 +1,38 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pigeondome-simulator"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = ["paho-mqtt>=2.1,<3"]
+
+[project.optional-dependencies]
+dev = ["ruff", "mypy", "pytest", "pytest-cov", "jsonschema"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+pigeondome_sim = ["py.typed"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "S", "SIM"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S101", "S311"]
+"src/pigeondome_sim/__main__.py" = ["S311"]
+# random simula fenômeno natural, não é criptografia
+"src/pigeondome_sim/generator.py" = ["S311"]
+
+[tool.mypy]
+strict = true
+
+[tool.pytest.ini_options]
+addopts = "--cov=pigeondome_sim --cov-report=term-missing"
+testpaths = ["tests"]
