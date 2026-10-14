@@ -1,5 +1,6 @@
 """Publicação MQTT: status com Last Will e detecções com QoS 1."""
 
+import contextlib
 import json
 import logging
 from typing import Any
@@ -52,10 +53,13 @@ class CameraPublisher:
     def _on_disconnect(
         self, client: Any, userdata: Any, flags: Any, reason_code: Any, properties: Any
     ) -> None:
-        log.warning("desconectado (%s); reconectando automaticamente", reason_code)
+        if reason_code.is_failure:
+            log.warning("conexão perdida (%s); reconectando automaticamente", reason_code)
+        else:
+            log.info("desconectado")
 
     def start(self) -> None:
-        self._client.connect_async(self._settings.host, self._settings.port)
+        self._client.connect_async(self._settings.host, self._settings.port, keepalive=15)
         self._client.loop_start()
 
     def publish_detection(self, detection: Detection) -> None:
@@ -65,6 +69,10 @@ class CameraPublisher:
 
     def stop(self) -> None:
         # Desconexão limpa NÃO dispara o Last Will, então avisamos manualmente.
-        self._client.publish(self._status_topic, status_payload("offline"), qos=1, retain=True)
-        self._client.loop_stop()
+        info = self._client.publish(
+            self._status_topic, status_payload("offline"), qos=1, retain=True
+        )
+        with contextlib.suppress(RuntimeError, ValueError):
+            info.wait_for_publish(timeout=2)
         self._client.disconnect()
+        self._client.loop_stop()
