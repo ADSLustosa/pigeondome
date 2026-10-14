@@ -13,6 +13,23 @@ if (-not (Test-Path .env)) {
   Write-Host "[ok] .env criado com segredos aleatorios"
 }
 
+function Find-FreePort([int[]]$Candidates) {
+  foreach ($port in $Candidates) {
+    try {
+      $l = [Net.Sockets.TcpListener]::new([Net.IPAddress]::Loopback, $port)
+      $l.Start(); $l.Stop()
+      return $port
+    } catch { continue }
+  }
+  throw "nenhuma porta livre entre: $($Candidates -join ', ')"
+}
+
+if ((Get-Content .env -Raw) -notmatch '(?m)^POSTGRES_PORT=') {
+  $port = Find-FreePort 5433, 5434, 5435, 15432
+  [IO.File]::AppendAllText("$PSScriptRoot\.env", "POSTGRES_PORT=$port`n")
+  Write-Host "[ok] POSTGRES_PORT=$port"
+}
+
 $cfg = @{}
 Get-Content .env | Where-Object { $_ -match '^\s*[^#=]+=' } | ForEach-Object {
   $k, $v = $_ -split '=', 2
