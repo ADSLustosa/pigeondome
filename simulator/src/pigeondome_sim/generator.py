@@ -60,7 +60,9 @@ class DetectionGenerator:
                 return k
             k += 1
 
-    def generate(self, now: datetime) -> Detection:
-        count = min(self._poisson(expected_rate(now.hour)), MAX_PIGEONS)
+    def generate(self, now: datetime, hour: int | None = None) -> Detection:
+        """Gera uma leitura em `now`. `hour` força apenas o modelo (demonstrações)."""
+        model_hour = now.hour if hour is None else hour
+        count = min(self._poisson(expected_rate(model_hour)), MAX_PIGEONS)
         confidence = round(self._rng.uniform(0.75, 0.99), 2)
         return Detection(self._device_id, now, count, confidence)
