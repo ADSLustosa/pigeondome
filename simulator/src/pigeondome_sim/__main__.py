@@ -23,9 +23,7 @@ def main() -> int:
     try:
         while True:
             now = datetime.now().astimezone()
-            if settings.force_hour is not None:
-                now = now.replace(hour=settings.force_hour)
-            publisher.publish_detection(generator.generate(now))
+            publisher.publish_detection(generator.generate(now, settings.force_hour))
             time.sleep(settings.interval_s)
     except KeyboardInterrupt:
         logging.info("encerrando")
