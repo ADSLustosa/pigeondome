@@ -1,0 +1,52 @@
+"""Adaptador PostgreSQL da porta DetectionRepository."""
+
+from datetime import datetime
+from typing import Any, LiteralString
+
+import psycopg
+from psycopg_pool import ConnectionPool
+
+from pigeondome.application.ports import StorageError
+from pigeondome.domain.models import Detection
+
+_INSERT: LiteralString = (
+    "INSERT INTO detections (device_id, detected_at, pigeon_count, confidence) "
+    "VALUES (%s, %s, %s, %s) "
+    "ON CONFLICT (device_id, detected_at) DO NOTHING"
+)
+_SELECT: LiteralString = (
+    "SELECT device_id, detected_at, pigeon_count, confidence FROM detections "
+    "WHERE device_id = %s AND detected_at >= %s AND detected_at < %s "
+    "ORDER BY detected_at"
+)
+
+
+class PostgresDetectionRepository:
+    def __init__(self, pool: ConnectionPool[Any]) -> None:
+        self._pool = pool
+
+    def add(self, detection: Detection) -> bool:
+        params = (
+            detection.device_id,
+            detection.timestamp,
+            detection.pigeon_count,
+            detection.confidence,
+        )
+        try:
+            with self._pool.connection() as conn:
+                cursor = conn.execute(_INSERT, params)
+                inserted: int = cursor.rowcount
+                return inserted == 1
+        except psycopg.Error as exc:
+            raise StorageError("falha ao gravar a detecção") from exc
+
+    def list_between(self, device_id: str, start: datetime, end: datetime) -> list[Detection]:
+        try:
+            with self._pool.connection() as conn:
+                rows = conn.execute(_SELECT, (device_id, start, end)).fetchall()
+        except psycopg.Error as exc:
+            raise StorageError("falha ao consultar detecções") from exc
+        return [
+            Detection(device_id=r[0], timestamp=r[1], pigeon_count=r[2], confidence=r[3])
+            for r in rows
+        ]

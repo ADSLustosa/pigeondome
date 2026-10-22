@@ -6,6 +6,10 @@ from typing import Protocol
 from pigeondome.domain.models import Detection
 
 
+class StorageError(Exception):
+    """Falha de armazenamento (banco indisponível etc.), independente da tecnologia."""
+
+
 class DetectionRepository(Protocol):
     def add(self, detection: Detection) -> bool:
         """Grava a detecção. Devolve False se já existia (idempotência)."""
