@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "pigeondome-backend"
 version = "0.1.0"
 requires-python = ">=3.12"
-dependencies = ["paho-mqtt>=2.1,<3", "jsonschema>=4.23"]
+dependencies = ["paho-mqtt>=2.1,<3", "jsonschema>=4.23", "psycopg[binary,pool]>=3.2"]
 
 [project.optional-dependencies]
 dev = ["ruff", "mypy", "pytest", "pytest-cov", "pre-commit", "types-jsonschema"]
@@ -15,7 +15,7 @@ dev = ["ruff", "mypy", "pytest", "pytest-cov", "pre-commit", "types-jsonschema"]
 where = ["src"]
 
 [tool.setuptools.package-data]
-pigeondome = ["py.typed"]
+pigeondome = ["py.typed", "migrations/*.sql"]
 
 [tool.ruff]
 line-length = 100
@@ -31,5 +31,5 @@ select = ["E", "F", "I", "B", "UP", "S", "SIM"]
 strict = true
 
 [tool.pytest.ini_options]
-addopts = "--cov=pigeondome --cov-report=term-missing"
+addopts = "--cov=pigeondome --cov-report=term-missing --tb=short"
 testpaths = ["tests"]

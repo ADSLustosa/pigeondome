@@ -8,6 +8,7 @@ import paho.mqtt.client as mqtt
 from paho.mqtt.enums import CallbackAPIVersion
 
 from pigeondome.adapters.contract import DetectionParser, InvalidMessageError
+from pigeondome.application.ports import StorageError
 from pigeondome.application.use_cases import IngestDetection
 from pigeondome.config import MqttSettings
 
@@ -20,6 +21,7 @@ class Outcome(Enum):
     ACCEPTED = "accepted"
     DUPLICATE = "duplicate"
     REJECTED = "rejected"
+    STORAGE_ERROR = "storage_error"
 
 
 class DetectionMessageHandler:
@@ -29,6 +31,7 @@ class DetectionMessageHandler:
         self.accepted = 0
         self.duplicates = 0
         self.rejected = 0
+        self.storage_errors = 0
         self._devices: set[str] = set()
 
     def handle(self, topic: str, raw: bytes) -> Outcome:
@@ -40,7 +43,14 @@ class DetectionMessageHandler:
             log.warning("mensagem rejeitada em %r: %r", topic, str(exc))
             return Outcome.REJECTED
         self._devices.add(detection.device_id)
-        if self._ingest.execute(detection):
+        try:
+            is_new = self._ingest.execute(detection)
+        except StorageError:
+            # uma falha de banco nunca pode derrubar a thread de rede do paho
+            self.storage_errors += 1
+            log.exception("falha ao gravar detecção de %r", detection.device_id)
+            return Outcome.STORAGE_ERROR
+        if is_new:
             self.accepted += 1
             return Outcome.ACCEPTED
         self.duplicates += 1

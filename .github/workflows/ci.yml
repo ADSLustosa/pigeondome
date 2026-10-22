@@ -11,6 +11,23 @@ permissions:
 jobs:
   backend:
     runs-on: ubuntu-24.04
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: pigeon
+          POSTGRES_PASSWORD: pigeon_ci
+          POSTGRES_DB: pigeondome
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U pigeon -d pigeondome"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    env:
+      # credencial descartável de um banco efêmero que só existe durante o job
+      PIGEONDOME_TEST_DSN: postgresql://pigeon:pigeon_ci@127.0.0.1:5432/pigeondome # gitleaks:allow
     defaults:
       run:
         working-directory: backend
