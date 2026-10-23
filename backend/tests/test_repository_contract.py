@@ -57,3 +57,38 @@ def test_list_devices_summarizes_each_device(repository: DetectionRepository) ->
     assert sorted(summary) == ["cam-outra", "cam-sim-01"]
     assert summary["cam-sim-01"].readings == 2
     assert summary["cam-sim-01"].last_detected_at == T0 + timedelta(minutes=5)
+
+
+def test_series_groups_readings_into_aligned_buckets(repository: DetectionRepository) -> None:
+    for minute, count in [(0, 0), (1, 4), (4, 2), (5, 6), (12, 0)]:
+        repository.add(det(minute, count))
+    five = timedelta(minutes=5)
+    points = repository.series(DEVICE, T0, T0 + timedelta(minutes=15), five)
+    assert [p.bucket_start for p in points] == [T0, T0 + five, T0 + 2 * five]
+    first = points[0]
+    assert (first.readings, first.readings_with_pigeons) == (3, 2)
+    assert (first.mean_pigeons, first.max_pigeons) == (2.0, 4)
+    assert (points[1].readings, points[1].max_pigeons) == (1, 6)
+    assert (points[2].readings, points[2].readings_with_pigeons) == (1, 0)
+
+
+def test_series_omits_buckets_without_readings(repository: DetectionRepository) -> None:
+    repository.add(det(0, 1))
+    repository.add(det(30, 2))
+    points = repository.series(DEVICE, T0, T0 + HOUR, timedelta(minutes=5))
+    assert [p.bucket_start for p in points] == [T0, T0 + timedelta(minutes=30)]
+
+
+def test_series_ignores_other_devices_and_the_window_end(repository: DetectionRepository) -> None:
+    repository.add(det(0, 5, device="cam-outra"))
+    repository.add(det(10, 9))  # exatamente no fim: fora da janela
+    five = timedelta(minutes=5)
+    assert repository.series(DEVICE, T0, T0 + timedelta(minutes=10), five) == []
+
+
+def test_series_buckets_are_aligned_to_the_window_start(repository: DetectionRepository) -> None:
+    repository.add(det(3, 1))
+    repository.add(det(8, 2))
+    start = T0 + timedelta(minutes=2)
+    points = repository.series(DEVICE, start, T0 + timedelta(minutes=12), timedelta(minutes=5))
+    assert [p.bucket_start for p in points] == [start, start + timedelta(minutes=5)]

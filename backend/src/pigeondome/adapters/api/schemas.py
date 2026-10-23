@@ -26,3 +26,22 @@ class PresenceOut(BaseModel):
     )
     mean_pigeons: float
     max_pigeons: int
+
+
+class SeriesPointOut(BaseModel):
+    bucket_start: datetime = Field(description="início do intervalo (UTC)")
+    readings: int
+    readings_with_pigeons: int
+    presence_rate: float = Field(ge=0, le=1)
+    mean_pigeons: float
+    max_pigeons: int
+
+
+class SeriesOut(BaseModel):
+    device_id: str
+    start: datetime
+    end: datetime
+    bucket: str = Field(description="tamanho do intervalo: 1m, 5m, 15m, 1h ou 1d")
+    points: list[SeriesPointOut] = Field(
+        description="só intervalos COM leituras: ausência de ponto = ausência de medição"
+    )

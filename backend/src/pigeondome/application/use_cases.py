@@ -1,9 +1,9 @@
 """Casos de uso: orquestram o domínio por meio das portas."""
 
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from pigeondome.application.ports import DetectionRepository
-from pigeondome.domain.models import Detection, DeviceSummary, PresenceStats
+from pigeondome.domain.models import Detection, DeviceSummary, PresenceStats, SeriesPoint
 
 
 class IngestDetection:
@@ -42,3 +42,17 @@ class ListDevices:
 
     def execute(self) -> list[DeviceSummary]:
         return self._repository.list_devices()
+
+
+class GetPresenceSeries:
+    def __init__(self, repository: DetectionRepository) -> None:
+        self._repository = repository
+
+    def execute(
+        self, device_id: str, start: datetime, end: datetime, bucket: timedelta
+    ) -> list[SeriesPoint]:
+        if bucket <= timedelta(0):
+            raise ValueError("o intervalo (bucket) precisa ser positivo")
+        if end <= start:
+            raise ValueError("a janela precisa ter fim posterior ao início")
+        return self._repository.series(device_id, start, end, bucket)

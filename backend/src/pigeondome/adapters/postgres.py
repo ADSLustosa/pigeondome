@@ -1,13 +1,13 @@
 """Adaptador PostgreSQL da porta DetectionRepository."""
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any, LiteralString
 
 import psycopg
 from psycopg_pool import ConnectionPool
 
 from pigeondome.application.ports import StorageError
-from pigeondome.domain.models import Detection, DeviceSummary
+from pigeondome.domain.models import Detection, DeviceSummary, SeriesPoint
 
 _INSERT: LiteralString = (
     "INSERT INTO detections (device_id, detected_at, pigeon_count, confidence) "
@@ -19,11 +19,20 @@ _SELECT: LiteralString = (
     "WHERE device_id = %s AND detected_at >= %s AND detected_at < %s "
     "ORDER BY detected_at"
 )
-
-
 _DEVICES: LiteralString = (
     "SELECT device_id, count(*), max(detected_at) FROM detections "
     "GROUP BY device_id ORDER BY device_id"
+)
+# date_bin agrupa em intervalos alinhados à origem (aqui, o início da janela)
+_SERIES: LiteralString = (
+    "SELECT date_bin(%s, detected_at, %s) AS bucket, "
+    "count(*), "
+    "count(*) FILTER (WHERE pigeon_count > 0), "
+    "avg(pigeon_count)::float8, "
+    "max(pigeon_count) "
+    "FROM detections "
+    "WHERE device_id = %s AND detected_at >= %s AND detected_at < %s "
+    "GROUP BY bucket ORDER BY bucket"
 )
 
 
@@ -64,3 +73,23 @@ class PostgresDetectionRepository:
         except psycopg.Error as exc:
             raise StorageError("falha ao listar dispositivos") from exc
         return [DeviceSummary(device_id=r[0], readings=r[1], last_detected_at=r[2]) for r in rows]
+
+    def series(
+        self, device_id: str, start: datetime, end: datetime, bucket: timedelta
+    ) -> list[SeriesPoint]:
+        params = (bucket, start, device_id, start, end)
+        try:
+            with self._pool.connection() as conn:
+                rows = conn.execute(_SERIES, params).fetchall()
+        except psycopg.Error as exc:
+            raise StorageError("falha ao agregar a série temporal") from exc
+        return [
+            SeriesPoint(
+                bucket_start=r[0],
+                readings=r[1],
+                readings_with_pigeons=r[2],
+                mean_pigeons=r[3],
+                max_pigeons=r[4],
+            )
+            for r in rows
+        ]
