@@ -45,10 +45,12 @@ try {
   if (-not $ready) { throw "a API nao respondeu em /health (veja $log)" }
 
   foreach ($c in $checks) {
-    $code = [int](curl.exe -s -o NUL -w "%{http_code}" "$base$($c.Path)")
-    $ok = ($code -eq $c.Expect)
+    $out = (curl.exe -s -o NUL -w "%{http_code} %{content_type}" "$base$($c.Path)").Split(' ', 2)
+    $code = [int]$out[0]
+    $ctype = $out[1]
+    $ok = ($code -eq $c.Expect) -and ($code -lt 400 -or $ctype -like 'application/problem+json*')
     if (-not $ok) { $failed++ }
-    '{0}  esperado {1}  obtido {2}  {3}' -f $(if ($ok) { 'OK   ' } else { 'FALHA' }), $c.Expect, $code, $c.Path
+    '{0}  esperado {1}  obtido {2}  [{3}]  {4}' -f $(if ($ok) { 'OK   ' } else { 'FALHA' }), $c.Expect, $code, $ctype, $c.Path
   }
 
   "--- amostra: presenca de cam-sim-01 entre $Start e $End ---"
