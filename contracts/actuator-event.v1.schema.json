@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Evento do atuador (v1)",
+  "description": "Publicado pelo atuador em pigeondome/v1/{device_id}/events (QoS 1, sem retain). Trilha de auditoria: aceitação, recusa, início, fim e interrupção de pulsos.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "device_id", "event", "command_id", "at"],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "device_id": { "type": "string", "pattern": "^[a-z0-9-]{3,32}$" },
+    "event": {
+      "enum": ["command_accepted", "command_rejected", "pulse_started", "pulse_finished", "pulse_aborted"]
+    },
+    "command_id": {
+      "type": ["string", "null"],
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+    },
+    "reason_code": {
+      "enum": [
+        "expired", "duplicate", "busy", "cooldown", "budget_exhausted", "maintenance",
+        "fault", "invalid_command", "stop_command", "disconnected", "watchdog"
+      ],
+      "description": "Obrigatório em command_rejected e pulse_aborted; proibido nos demais."
+    },
+    "at": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?Z$"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": { "event": { "enum": ["command_rejected", "pulse_aborted"] } },
+        "required": ["event"]
+      },
+      "then": { "required": ["reason_code"] },
+      "else": { "not": { "required": ["reason_code"] } }
+    }
+  ]
+}

@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Comando para o atuador (v1)",
+  "description": "Publicado pelo backend em pigeondome/v1/{device_id}/commands (QoS 1, sem retain). O atuador descarta comandos vencidos (issued_at + ttl_s) e repetidos (command_id). O contrato não tem campo para tensão, corrente ou potência, e a duração máxima do pulso é a do firmware.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "command_id", "device_id", "action", "issued_at", "ttl_s"],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "command_id": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+      "description": "UUID em minúsculas; identifica o comando e impede execução repetida."
+    },
+    "device_id": { "type": "string", "pattern": "^[a-z0-9-]{3,32}$" },
+    "action": {
+      "enum": ["pulse", "stop"],
+      "description": "pulse: um pulso limitado; stop: desliga já (sempre aceito)."
+    },
+    "duration_s": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 10,
+      "description": "Duração do pulso, em segundos (só para pulse)."
+    },
+    "issued_at": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?Z$",
+      "description": "Instante de emissão, em UTC (sufixo Z)."
+    },
+    "ttl_s": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 30,
+      "description": "Validade do comando, em segundos, a partir de issued_at."
+    },
+    "reason": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["trigger"],
+      "properties": {
+        "trigger": { "enum": ["detection", "manual", "test"] },
+        "pigeon_count": { "type": "integer", "minimum": 0, "maximum": 50 }
+      },
+      "description": "Por que o comando foi emitido (auditoria)."
+    }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "action": { "const": "pulse" } }, "required": ["action"] },
+      "then": { "required": ["duration_s"] },
+      "else": { "not": { "required": ["duration_s"] } }
+    }
+  ]
+}
