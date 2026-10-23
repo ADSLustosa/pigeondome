@@ -234,3 +234,22 @@ def test_parser_and_the_contract_agree(document: dict[str, Any]) -> None:
     expected = COMMAND_CHECK.is_valid(document) or document.get("action") == "stop"
     accepted = "command_accepted" in names(send(online_service(), document, 0))
     assert accepted == expected
+
+
+def test_clean_shutdown_aborts_the_pulse_and_publishes_the_final_offline_state() -> None:
+    service = online_service()
+    send(service, pulse_doc(1, duration_s=10), 0)
+    published = service.shutdown(at(3))
+    (event,) = events_of(published)
+    assert (event["event"], event["reason_code"]) == ("pulse_aborted", "disconnected")
+    (state,) = states_of(published)
+    assert (state["online"], state["state"], state["output_on"]) == (False, "safe_off", False)
+    assert published[-1].retain
+    assert service.tick(at(4)) == []  # depois do encerramento nada mais é publicado
+
+
+def test_impossible_date_that_matches_the_text_pattern_is_rejected() -> None:
+    service = online_service()
+    document = pulse_doc(1, issued_at="2026-13-45T12:00:00Z")
+    (event,) = events_of(send(service, document, 0))
+    assert event["reason_code"] == "invalid_command"

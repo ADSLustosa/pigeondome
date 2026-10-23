@@ -3,6 +3,7 @@ user backend
 topic read pigeondome/v1/+/detections
 topic read pigeondome/v1/+/status
 topic read pigeondome/v1/+/actuator/state
+topic read pigeondome/v1/+/actuator/events
 topic write pigeondome/v1/+/commands
 
 # Camera: so publica deteccoes e status
@@ -14,4 +15,4 @@ topic write pigeondome/v1/+/status
 user actuator
 topic read pigeondome/v1/+/commands
 topic write pigeondome/v1/+/actuator/state
-topic write pigeondome/v1/+/status
+topic write pigeondome/v1/+/actuator/events
