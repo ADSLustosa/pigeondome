@@ -83,9 +83,46 @@ const dayAndTime = new Intl.DateTimeFormat('pt-BR', {
   minute: '2-digit',
 })
 
+const dateOnly = new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: '2-digit' })
+
+const MINUTE_MS = 60_000
+const HOUR_MS = 3_600_000
+const DAY_MS = 86_400_000
+const TIME_STEPS = [
+  5 * MINUTE_MS,
+  10 * MINUTE_MS,
+  15 * MINUTE_MS,
+  30 * MINUTE_MS,
+  HOUR_MS,
+  2 * HOUR_MS,
+  3 * HOUR_MS,
+  6 * HOUR_MS,
+  12 * HOUR_MS,
+  DAY_MS,
+]
+
 export function formatAxisTime(ms: number, spanMs: number): string {
-  const formatter = spanMs > 36 * 3_600_000 ? dayAndTime : timeOnly
-  return formatter.format(new Date(ms))
+  if (spanMs <= 36 * HOUR_MS) return timeOnly.format(new Date(ms))
+  const date = new Date(ms)
+  const atMidnight = date.getHours() === 0 && date.getMinutes() === 0
+  return (atMidnight ? dateOnly : dayAndTime).format(date)
+}
+
+/** Marcas em horários redondos do relógio local (22:00, 22:10...), todas dentro da janela. */
+export function niceTimeTicks(startMs: number, endMs: number, maxTicks: number): number[] {
+  const span = endMs - startMs
+  const step = TIME_STEPS.find((candidate) => span / candidate < maxTicks) ?? DAY_MS
+  // alinha ao relógio local (há fusos com diferença de meia hora, por exemplo)
+  const offset = -new Date(startMs).getTimezoneOffset() * MINUTE_MS
+  const ticks: number[] = []
+  for (
+    let tick = Math.ceil((startMs + offset) / step) * step - offset;
+    tick <= endMs;
+    tick += step
+  ) {
+    ticks.push(tick)
+  }
+  return ticks
 }
 
 export function layoutSeries(series: Series, size: ChartSize): ChartLayout {
@@ -150,19 +187,14 @@ export function layoutSeries(series: Series, size: ChartSize): ChartLayout {
     label: formatInteger(value),
   }))
 
-  const tickCount = 5
-  const xTicks: XTick[] = []
-  for (let i = 0; i < tickCount; i += 1) {
-    const fraction = i / (tickCount - 1)
+  const maxTicks = Math.max(3, Math.floor(plot.width / 90))
+  const xTicks: XTick[] = niceTimeTicks(startMs, startMs + spanMs, maxTicks).map((ms) => {
+    const x = xOf(ms)
     let anchor: XTick['anchor'] = 'middle'
-    if (i === 0) anchor = 'start'
-    else if (i === tickCount - 1) anchor = 'end'
-    xTicks.push({
-      x: plot.left + plot.width * fraction,
-      label: formatAxisTime(startMs + spanMs * fraction, spanMs),
-      anchor,
-    })
-  }
+    if (x < plot.left + 20) anchor = 'start'
+    else if (x > right - 20) anchor = 'end'
+    return { x, label: formatAxisTime(ms, spanMs), anchor }
+  })
 
   return { plot, bars, gaps, yTicks, xTicks, slots, startMs, bucketMs, spanMs }
 }

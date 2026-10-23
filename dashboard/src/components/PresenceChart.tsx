@@ -99,6 +99,13 @@ export function PresenceChart({ series }: { series: Series }) {
               rx={Math.min(3, bar.width / 2)}
             />
             <line
+              className="chart__whisker"
+              x1={bar.x + bar.width / 2}
+              x2={bar.x + bar.width / 2}
+              y1={bar.yMean}
+              y2={bar.yPeak}
+            />
+            <line
               className="chart__peak"
               x1={bar.x}
               x2={bar.x + bar.width}

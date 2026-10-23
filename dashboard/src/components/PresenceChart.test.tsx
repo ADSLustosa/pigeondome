@@ -36,6 +36,7 @@ describe('PresenceChart', () => {
     const { container } = render(<PresenceChart series={SERIES} />)
     expect(container.querySelectorAll('.chart__bar')).toHaveLength(4)
     expect(container.querySelectorAll('.chart__gap')).toHaveLength(2)
+    expect(container.querySelectorAll('.chart__whisker')).toHaveLength(4)
   })
 })
 
