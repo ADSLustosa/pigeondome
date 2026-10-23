@@ -226,3 +226,6 @@ node_modules/
 .ruff_cache/
 .pytest_cache/
 infra/mosquitto/passwd
+
+# o gitignore de Python ignora qualquer pasta chamada lib/; o painel usa dashboard/src/lib/
+!dashboard/src/lib/
