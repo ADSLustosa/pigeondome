@@ -50,3 +50,12 @@ class PresenceStats:
     def presence_rate(self) -> float:
         """Fração das leituras em que havia pelo menos um pombo."""
         return self.readings_with_pigeons / self.readings if self.readings else 0.0
+
+
+@dataclass(frozen=True)
+class DeviceSummary:
+    """Resumo de um dispositivo: quantas leituras tem e quando foi a última."""
+
+    device_id: str
+    readings: int
+    last_detected_at: datetime

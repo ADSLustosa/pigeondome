@@ -3,7 +3,7 @@
 from datetime import datetime
 
 from pigeondome.application.ports import DetectionRepository
-from pigeondome.domain.models import Detection, PresenceStats
+from pigeondome.domain.models import Detection, DeviceSummary, PresenceStats
 
 
 class IngestDetection:
@@ -34,3 +34,11 @@ class GetPresenceStats:
             mean_pigeons=sum(counts) / readings,
             max_pigeons=max(counts),
         )
+
+
+class ListDevices:
+    def __init__(self, repository: DetectionRepository) -> None:
+        self._repository = repository
+
+    def execute(self) -> list[DeviceSummary]:
+        return self._repository.list_devices()
