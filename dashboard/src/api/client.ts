@@ -1,5 +1,5 @@
 import { API_BASE_URL } from '../config'
-import type { Device, Presence, Problem, TimeRange } from './types'
+import type { BucketName, Device, Presence, Problem, Series, TimeRange } from './types'
 
 export class ApiError extends Error {
   readonly status: number
@@ -53,4 +53,15 @@ export function getPresence(
   const query = new URLSearchParams({ start: range.start, end: range.end })
   const path = `/api/v1/devices/${encodeURIComponent(deviceId)}/presence?${query.toString()}`
   return getJson<Presence>(path, signal)
+}
+
+export function getSeries(
+  deviceId: string,
+  range: TimeRange,
+  bucket: BucketName,
+  signal?: AbortSignal,
+): Promise<Series> {
+  const query = new URLSearchParams({ start: range.start, end: range.end, bucket })
+  const path = `/api/v1/devices/${encodeURIComponent(deviceId)}/presence/series?${query.toString()}`
+  return getJson<Series>(path, signal)
 }

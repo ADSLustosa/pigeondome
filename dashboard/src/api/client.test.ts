@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { getPresence, listDevices } from './client'
+import { getPresence, getSeries, listDevices } from './client'
 
 const RANGE = { start: '2026-10-22T22:00:00.000Z', end: '2026-10-22T23:00:00.000Z' }
 
@@ -41,6 +41,15 @@ describe('cliente da API', () => {
       status: 0,
       message: 'Não foi possível conectar à API',
     })
+  })
+
+  it('pede a série com o tamanho do intervalo', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(respond({ points: [] }))
+    vi.stubGlobal('fetch', fetchMock)
+    await getSeries('cam-sim-01', RANGE, '5m')
+    const url = String(fetchMock.mock.calls[0]?.[0])
+    expect(url).toContain('/presence/series?')
+    expect(url).toContain('bucket=5m')
   })
 
   it('codifica o identificador e envia a janela na URL', async () => {

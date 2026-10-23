@@ -4,6 +4,7 @@ import { Controls } from './components/Controls'
 import { ErrorNotice } from './components/ErrorNotice'
 import { Header } from './components/Header'
 import { PresencePanel } from './components/PresencePanel'
+import { SeriesSection } from './components/SeriesSection'
 import type { ConnectionStatus } from './components/StatusChip'
 import { DEVICES_POLL_MS } from './config'
 import { usePolling } from './hooks/usePolling'
@@ -60,7 +61,8 @@ export default function App() {
               windowId={windowId}
               onWindowChange={setWindowId}
             />
-            <PresencePanel key={`${deviceId}:${windowId}`} deviceId={deviceId} preset={preset} />
+            <PresencePanel key={`presence:${deviceId}:${windowId}`} deviceId={deviceId} preset={preset} />
+            <SeriesSection key={`series:${deviceId}:${windowId}`} deviceId={deviceId} preset={preset} />
           </>
         ) : null}
       </main>
