@@ -1,0 +1,87 @@
+/* Tokens de design: toda cor, espaçamento e tipografia da interface nasce aqui. */
+:root {
+  color-scheme: light;
+  --font-sans: 'Inter Variable', 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: ui-monospace, 'Cascadia Code', Consolas, monospace;
+
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-7: 3rem;
+
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.5rem;
+  --text-2xl: 2.25rem;
+  --leading-tight: 1.15;
+  --leading-normal: 1.5;
+  --duration: 160ms;
+
+  /* tema claro */
+  --bg: #f4f7fb;
+  --bg-elevated: #ffffff;
+  --surface: #ffffff;
+  --surface-muted: #eef2f8;
+  --border: #d8e0ec;
+  --text: #0f172a;
+  --text-muted: #475569;
+  --accent: #0369a1;
+  --accent-soft: #e0f2fe;
+  --success: #047857;
+  --danger: #b91c1c;
+  --danger-soft: #fee2e2;
+  --focus-ring: 0 0 0 3px rgba(3, 105, 161, 0.35);
+  --shadow-card: 0 1px 2px rgba(15, 23, 42, 0.06), 0 8px 24px rgba(15, 23, 42, 0.06);
+  --gradient-accent: linear-gradient(135deg, #0284c7, #10b981);
+}
+
+/* tema escuro escolhido pelo usuário */
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --bg: #0b1220;
+  --bg-elevated: #0f1a2e;
+  --surface: #111c31;
+  --surface-muted: #16233b;
+  --border: #24344f;
+  --text: #e8eef9;
+  --text-muted: #9fb0c9;
+  --accent: #38bdf8;
+  --accent-soft: rgba(56, 189, 248, 0.14);
+  --success: #34d399;
+  --danger: #f87171;
+  --danger-soft: rgba(248, 113, 113, 0.14);
+  --focus-ring: 0 0 0 3px rgba(56, 189, 248, 0.45);
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.4), 0 12px 32px rgba(0, 0, 0, 0.35);
+  --gradient-accent: linear-gradient(135deg, #38bdf8, #34d399);
+}
+
+/* sem escolha salva: segue a preferência do sistema operacional */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    color-scheme: dark;
+    --bg: #0b1220;
+    --bg-elevated: #0f1a2e;
+    --surface: #111c31;
+    --surface-muted: #16233b;
+    --border: #24344f;
+    --text: #e8eef9;
+    --text-muted: #9fb0c9;
+    --accent: #38bdf8;
+    --accent-soft: rgba(56, 189, 248, 0.14);
+    --success: #34d399;
+    --danger: #f87171;
+    --danger-soft: rgba(248, 113, 113, 0.14);
+    --focus-ring: 0 0 0 3px rgba(56, 189, 248, 0.45);
+    --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.4), 0 12px 32px rgba(0, 0, 0, 0.35);
+    --gradient-accent: linear-gradient(135deg, #38bdf8, #34d399);
+  }
+}
