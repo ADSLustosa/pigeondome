@@ -531,3 +531,8 @@ select:disabled {
 .data-table tbody th {
   font-weight: 500;
 }
+.chart__whisker {
+  stroke: var(--text);
+  stroke-width: 1.5;
+  opacity: 0.45;
+}

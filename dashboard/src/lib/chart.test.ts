@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Series, SeriesPoint } from '../api/types'
-import { describeSeries, layoutSeries, niceScale, slotAtX } from './chart'
+import { describeSeries, layoutSeries, niceScale, niceTimeTicks, slotAtX } from './chart'
 
 const START = Date.parse('2026-10-22T22:00:00Z')
 
@@ -59,10 +59,12 @@ describe('layoutSeries', () => {
     expect(bar?.yMean).toBeCloseTo(top + height / 2, 5) // média 4 = metade
   })
 
-  it('gera 5 marcas de tempo, da primeira à última', () => {
-    expect(layout.xTicks).toHaveLength(5)
-    expect(layout.xTicks[0]?.anchor).toBe('start')
-    expect(layout.xTicks[4]?.anchor).toBe('end')
+  it('gera marcas de tempo dentro da área do gráfico', () => {
+    expect(layout.xTicks.length).toBeGreaterThanOrEqual(2)
+    for (const tick of layout.xTicks) {
+      expect(tick.x).toBeGreaterThanOrEqual(layout.plot.left)
+      expect(tick.x).toBeLessThanOrEqual(layout.plot.left + layout.plot.width)
+    }
   })
 })
 
@@ -81,5 +83,36 @@ describe('descrição e ponteiro', () => {
     expect(slotAtX(layout, left)).toBe(0)
     expect(slotAtX(layout, left + width)).toBe(9)
     expect(slotAtX(layout, left - 1)).toBeNull()
+  })
+})
+
+describe('niceTimeTicks', () => {
+  const HOUR = 3_600_000
+  const start = Date.parse('2026-10-22T21:53:31Z')
+  const offsetOf = (ms: number) => -new Date(ms).getTimezoneOffset() * 60_000
+  const gap = (ticks: number[]) => (ticks[1] ?? 0) - (ticks[0] ?? 0)
+
+  it('alinha as marcas a horários redondos do relógio local', () => {
+    const ticks = niceTimeTicks(start, start + HOUR, 7)
+    expect(ticks.length).toBeGreaterThan(0)
+    for (const tick of ticks) {
+      expect((tick + offsetOf(start)) % (10 * 60_000)).toBe(0)
+    }
+  })
+
+  it('mantém todas as marcas dentro da janela e sem exagero', () => {
+    for (const hours of [1, 6, 24, 168]) {
+      const end = start + hours * HOUR
+      const ticks = niceTimeTicks(start, end, 7)
+      expect(ticks.length).toBeLessThanOrEqual(8)
+      expect(ticks.every((tick) => tick >= start && tick <= end)).toBe(true)
+    }
+  })
+
+  it('usa passos maiores em janelas maiores', () => {
+    const hour = niceTimeTicks(start, start + HOUR, 7)
+    const week = niceTimeTicks(start, start + 168 * HOUR, 7)
+    expect(gap(hour)).toBe(10 * 60_000)
+    expect(gap(week)).toBe(24 * HOUR)
   })
 })
