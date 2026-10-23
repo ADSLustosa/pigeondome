@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Estado do atuador (v1)",
+  "description": "Publicado pelo atuador em pigeondome/v1/{device_id}/state (QoS 1, retain). A última vontade (LWT) usa online=false, state=safe_off e output_on=false, com reported_at no instante da conexão.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "device_id", "online", "state", "output_on",
+    "last_command_id", "fault", "budget_used_s_1h", "reported_at"
+  ],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "device_id": { "type": "string", "pattern": "^[a-z0-9-]{3,32}$" },
+    "online": { "type": "boolean" },
+    "state": { "enum": ["safe_off", "idle", "pulsing", "cooldown", "maintenance", "fault"] },
+    "output_on": {
+      "type": "boolean",
+      "description": "Saída energizada. Só pode ser verdadeira no estado pulsing."
+    },
+    "last_command_id": {
+      "type": ["string", "null"],
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+    },
+    "fault": { "enum": ["watchdog", "overcurrent", "over_budget", "clock_invalid", "self_test", null] },
+    "budget_used_s_1h": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 3600,
+      "description": "Segundos com a saída ligada na última hora."
+    },
+    "reported_at": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?Z$"
+    }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "output_on": { "const": true } }, "required": ["output_on"] },
+      "then": { "properties": { "state": { "const": "pulsing" }, "online": { "const": true } } }
+    },
+    {
+      "if": { "properties": { "online": { "const": false } }, "required": ["online"] },
+      "then": { "properties": { "state": { "const": "safe_off" }, "output_on": { "const": false } } }
+    },
+    {
+      "if": { "properties": { "state": { "const": "fault" } }, "required": ["state"] },
+      "then": { "properties": { "fault": { "type": "string" } } },
+      "else": { "properties": { "fault": { "const": null } } }
+    }
+  ]
+}
