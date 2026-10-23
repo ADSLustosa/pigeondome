@@ -172,6 +172,17 @@ class ActuatorService:
         self._pending.extend(self._core.connection_lost(now))
         return []
 
+    def shutdown(self, now: Instant) -> list[Publication]:
+        """Encerramento limpo: aborta o pulso e publica o estado final (o LWT não dispara)."""
+        topic = events_topic(self._device_id)
+        publications = [
+            Publication(topic, _dumps(event_message(self._device_id, event)), 1, False)
+            for event in self._core.connection_lost(now)
+        ]
+        publications.append(self.will(now))
+        self._connected = False
+        return publications
+
     def on_message(self, topic: str, payload: bytes, now: Instant) -> list[Publication]:
         if topic != command_topic(self._device_id):
             return []
