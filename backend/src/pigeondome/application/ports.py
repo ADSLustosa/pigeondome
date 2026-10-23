@@ -3,7 +3,7 @@
 from datetime import datetime
 from typing import Protocol
 
-from pigeondome.domain.models import Detection
+from pigeondome.domain.models import Detection, DeviceSummary
 
 
 class StorageError(Exception):
@@ -17,4 +17,8 @@ class DetectionRepository(Protocol):
 
     def list_between(self, device_id: str, start: datetime, end: datetime) -> list[Detection]:
         """Detecções do dispositivo em [start, end), ordenadas por tempo."""
+        ...
+
+    def list_devices(self) -> list[DeviceSummary]:
+        """Um resumo por dispositivo já visto, ordenado pelo identificador."""
         ...

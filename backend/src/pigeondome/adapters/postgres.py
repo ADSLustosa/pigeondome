@@ -7,7 +7,7 @@ import psycopg
 from psycopg_pool import ConnectionPool
 
 from pigeondome.application.ports import StorageError
-from pigeondome.domain.models import Detection
+from pigeondome.domain.models import Detection, DeviceSummary
 
 _INSERT: LiteralString = (
     "INSERT INTO detections (device_id, detected_at, pigeon_count, confidence) "
@@ -18,6 +18,12 @@ _SELECT: LiteralString = (
     "SELECT device_id, detected_at, pigeon_count, confidence FROM detections "
     "WHERE device_id = %s AND detected_at >= %s AND detected_at < %s "
     "ORDER BY detected_at"
+)
+
+
+_DEVICES: LiteralString = (
+    "SELECT device_id, count(*), max(detected_at) FROM detections "
+    "GROUP BY device_id ORDER BY device_id"
 )
 
 
@@ -50,3 +56,11 @@ class PostgresDetectionRepository:
             Detection(device_id=r[0], timestamp=r[1], pigeon_count=r[2], confidence=r[3])
             for r in rows
         ]
+
+    def list_devices(self) -> list[DeviceSummary]:
+        try:
+            with self._pool.connection() as conn:
+                rows = conn.execute(_DEVICES).fetchall()
+        except psycopg.Error as exc:
+            raise StorageError("falha ao listar dispositivos") from exc
+        return [DeviceSummary(device_id=r[0], readings=r[1], last_detected_at=r[2]) for r in rows]

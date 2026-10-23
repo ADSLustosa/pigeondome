@@ -43,3 +43,17 @@ def test_window_is_half_open(repository: DetectionRepository) -> None:
 def test_other_devices_are_ignored(repository: DetectionRepository) -> None:
     repository.add(det(0, 5, device="cam-outra"))
     assert repository.list_between(DEVICE, T0, T0 + HOUR) == []
+
+
+def test_list_devices_is_empty_without_data(repository: DetectionRepository) -> None:
+    assert repository.list_devices() == []
+
+
+def test_list_devices_summarizes_each_device(repository: DetectionRepository) -> None:
+    repository.add(det(0, 1))
+    repository.add(det(5, 2))
+    repository.add(det(1, 3, device="cam-outra"))
+    summary = {d.device_id: d for d in repository.list_devices()}
+    assert sorted(summary) == ["cam-outra", "cam-sim-01"]
+    assert summary["cam-sim-01"].readings == 2
+    assert summary["cam-sim-01"].last_detected_at == T0 + timedelta(minutes=5)

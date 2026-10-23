@@ -3,7 +3,7 @@
 import threading
 from datetime import datetime
 
-from pigeondome.domain.models import Detection
+from pigeondome.domain.models import Detection, DeviceSummary
 
 
 class InMemoryDetectionRepository:
@@ -28,3 +28,14 @@ class InMemoryDetectionRepository:
                 if d.device_id == device_id and start <= d.timestamp < end
             ]
         return sorted(found, key=lambda d: d.timestamp)
+
+    def list_devices(self) -> list[DeviceSummary]:
+        with self._lock:
+            items = list(self._items.values())
+        by_device: dict[str, list[Detection]] = {}
+        for detection in items:
+            by_device.setdefault(detection.device_id, []).append(detection)
+        return [
+            DeviceSummary(device_id, len(found), max(d.timestamp for d in found))
+            for device_id, found in sorted(by_device.items())
+        ]

@@ -57,3 +57,21 @@ class DatabaseSettings:
             password=self.password,
             connect_timeout=5,
         )
+
+
+@dataclass(frozen=True)
+class ApiSettings:
+    host: str
+    port: int
+    allowed_origins: tuple[str, ...]
+
+    @classmethod
+    def from_env(cls) -> "ApiSettings":
+        origins = os.environ.get(
+            "API_ALLOWED_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173"
+        )
+        return cls(
+            host=os.environ.get("API_HOST", "127.0.0.1"),
+            port=int(os.environ.get("API_PORT", "8000")),
+            allowed_origins=tuple(o.strip() for o in origins.split(",") if o.strip()),
+        )
