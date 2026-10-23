@@ -3,3 +3,4 @@ export const API_BASE_URL: string =
 
 export const DEVICES_POLL_MS = 30_000
 export const PRESENCE_POLL_MS = 10_000
+export const SERIES_POLL_MS = 15_000

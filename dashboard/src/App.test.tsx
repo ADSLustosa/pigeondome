@@ -14,6 +14,23 @@ const PRESENCE = {
   max_pigeons: 8,
 }
 
+const SERIES = {
+  device_id: 'cam-sim-01',
+  start: '2026-10-22T21:33:00Z',
+  end: '2026-10-22T22:33:00Z',
+  bucket: '1m',
+  points: [
+    {
+      bucket_start: '2026-10-22T22:30:00Z',
+      readings: 8,
+      readings_with_pigeons: 7,
+      presence_rate: 0.875,
+      mean_pigeons: 3.125,
+      max_pigeons: 7,
+    },
+  ],
+}
+
 function json(body: unknown): Response {
   return new Response(JSON.stringify(body), { headers: { 'content-type': 'application/json' } })
 }
@@ -33,6 +50,7 @@ function mockApi(routes: [fragment: string, body: unknown][]) {
 describe('App', () => {
   it('mostra os indicadores do dispositivo selecionado', async () => {
     mockApi([
+      ['/devices/cam-sim-01/presence/series', SERIES],
       ['/devices/cam-sim-01/presence', PRESENCE],
       ['/devices', DEVICES],
     ])
@@ -42,6 +60,9 @@ describe('App', () => {
     expect(screen.getByText('94,7%')).toBeInTheDocument()
     expect(screen.getByText('4,0')).toBeInTheDocument()
     expect(screen.getByText('API online')).toBeInTheDocument()
+    expect(
+      await screen.findByRole('img', { name: /presença de pombos ao longo do tempo/i }),
+    ).toBeInTheDocument()
   })
 
   it('avisa quando a API está fora do ar', async () => {

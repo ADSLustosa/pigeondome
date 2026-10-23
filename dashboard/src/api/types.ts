@@ -24,6 +24,24 @@ export interface Presence {
   max_pigeons: number
 }
 
+export interface SeriesPoint {
+  bucket_start: string
+  readings: number
+  readings_with_pigeons: number
+  presence_rate: number
+  mean_pigeons: number
+  max_pigeons: number
+}
+
+/** Só traz intervalos COM leituras: ausência de ponto = ausência de medição. */
+export interface Series {
+  device_id: string
+  start: string
+  end: string
+  bucket: BucketName
+  points: SeriesPoint[]
+}
+
 export interface FieldError {
   field: string
   message: string
