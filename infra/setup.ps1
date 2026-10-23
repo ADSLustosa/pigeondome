@@ -19,6 +19,17 @@ function Find-FreePort([int[]]$Candidates) {
   throw "nenhuma porta livre entre: $($Candidates -join ', ')"
 }
 
+function Get-ExistingDbPort {
+  # Se o banco ja existe (criado antes de o .env ter POSTGRES_PORT), a porta dele vale:
+  # escolher outra faria os scripts procurarem o banco no lugar errado.
+  try {
+    $raw = docker inspect --format '{{with index .HostConfig.PortBindings `5432/tcp`}}{{(index . 0).HostPort}}{{end}}' pigeondome-db 2>$null
+    $text = "$raw".Trim()
+    if ($LASTEXITCODE -eq 0 -and $text -match '^\d+$') { return [int]$text }
+  } catch { return $null }
+  return $null
+}
+
 # O script muda de pasta para trabalhar, mas SEMPRE devolve o terminal ao lugar de origem.
 Push-Location $PSScriptRoot
 try {
@@ -29,9 +40,14 @@ try {
   }
 
   if ((Get-Content .env -Raw) -notmatch '(?m)^POSTGRES_PORT=') {
-    $port = Find-FreePort 5433, 5434, 5435, 15432
+    $port = Get-ExistingDbPort
+    $origin = 'porta do banco ja existente'
+    if (-not $port) {
+      $port = Find-FreePort 5433, 5434, 5435, 15432
+      $origin = 'porta livre'
+    }
     [IO.File]::AppendAllText("$PSScriptRoot\.env", "POSTGRES_PORT=$port`n")
-    Write-Host "[ok] POSTGRES_PORT=$port"
+    Write-Host "[ok] POSTGRES_PORT=$port ($origin)"
   }
 
   $cfg = @{}
@@ -50,6 +66,8 @@ try {
          "mosquitto_passwd -b /mosquitto/config/passwd actuator '$($cfg.MQTT_PASS_ACTUATOR)' && " +
          "chown 1883:1883 /mosquitto/config/passwd /mosquitto/config/acl && " +
          "chmod 0600 /mosquitto/config/passwd /mosquitto/config/acl"
+  # Os avisos "owner is not root" impressos aqui sao do mosquitto_passwd (uma vez por usuario)
+  # e sao esperados: o chown final, dentro do mesmo comando, acerta o dono.
   docker run --rm -v $mount $image sh -c $cmd
   if ($LASTEXITCODE -ne 0) { throw "falha ao gerar o arquivo de senhas do Mosquitto" }
 

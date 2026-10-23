@@ -6,12 +6,13 @@ from datetime import UTC, datetime, timedelta
 from types import SimpleNamespace
 from typing import Any
 
+import paho.mqtt.client as mqtt
 import pytest
 
 from pigeondome_sim import actuator_runner
 from pigeondome_sim.actuator_core import Instant
 from pigeondome_sim.actuator_messages import iso_utc
-from pigeondome_sim.actuator_runner import ActuatorRunner, ActuatorSettings, main
+from pigeondome_sim.actuator_runner import ActuatorRunner, ActuatorSettings, main, system_clock
 from pigeondome_sim.actuator_service import command_topic, events_topic, state_topic
 
 DEVICE = "act-sim-01"
@@ -303,3 +304,15 @@ def test_main_runs_the_runner_until_it_returns(monkeypatch: pytest.MonkeyPatch) 
     monkeypatch.setattr(actuator_runner.signal, "signal", lambda *args: None)
     assert main() == 0
     assert ran == [True]
+
+
+def test_system_clock_reads_a_monotonic_clock_and_an_aware_utc_wall_clock() -> None:
+    first = system_clock()
+    second = system_clock()
+    assert second.mono_s >= first.mono_s
+    assert first.wall.utcoffset() == timedelta(0)
+
+
+def test_default_client_is_a_real_paho_client_that_accepts_our_configuration() -> None:
+    runner = ActuatorRunner(settings())  # sem cliente falso: configura um mqtt.Client de verdade
+    assert isinstance(runner._client, mqtt.Client)
