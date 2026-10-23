@@ -21,6 +21,9 @@ foreach ($key in 'POSTGRES_PASSWORD', 'POSTGRES_PORT') {
 $checks = @(
   @{ Expect = 200; Path = '/health' },
   @{ Expect = 200; Path = '/api/v1/devices' },
+  @{ Expect = 404; Path = '/api/v1/devices/nao-existe/presence/series' },
+  @{ Expect = 422; Path = '/api/v1/devices/cam-sim-01/presence/series?bucket=7m' },
+  @{ Expect = 422; Path = '/api/v1/devices/cam-sim-01/presence/series?start=2026-01-01T00:00:00Z&end=2026-02-01T00:00:00Z&bucket=1m' },
   @{ Expect = 404; Path = '/api/v1/devices/nao-existe/presence' },
   @{ Expect = 422; Path = '/api/v1/devices/BAD_ID/presence' },
   @{ Expect = 422; Path = '/api/v1/devices/cam-sim-01/presence?start=2026-10-22T22:30:00' },
@@ -55,6 +58,9 @@ try {
 
   "--- amostra: presenca de cam-sim-01 entre $Start e $End ---"
   curl.exe -s "$base/api/v1/devices/cam-sim-01/presence?start=$Start&end=$End"
+  ""
+  "--- amostra: serie de 1 minuto no mesmo periodo ---"
+  curl.exe -s "$base/api/v1/devices/cam-sim-01/presence/series?start=$Start&end=$End&bucket=1m"
   ""
 }
 finally {

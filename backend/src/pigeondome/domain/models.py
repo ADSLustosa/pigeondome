@@ -59,3 +59,18 @@ class DeviceSummary:
     device_id: str
     readings: int
     last_detected_at: datetime
+
+
+@dataclass(frozen=True)
+class SeriesPoint:
+    """Resumo de um intervalo de tempo (bucket) que tem pelo menos uma leitura."""
+
+    bucket_start: datetime
+    readings: int
+    readings_with_pigeons: int
+    mean_pigeons: float
+    max_pigeons: int
+
+    @property
+    def presence_rate(self) -> float:
+        return self.readings_with_pigeons / self.readings if self.readings else 0.0

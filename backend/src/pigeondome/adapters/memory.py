@@ -1,9 +1,9 @@
 """Adaptador em memória da porta DetectionRepository (testes e demonstrações)."""
 
 import threading
-from datetime import datetime
+from datetime import datetime, timedelta
 
-from pigeondome.domain.models import Detection, DeviceSummary
+from pigeondome.domain.models import Detection, DeviceSummary, SeriesPoint
 
 
 class InMemoryDetectionRepository:
@@ -38,4 +38,22 @@ class InMemoryDetectionRepository:
         return [
             DeviceSummary(device_id, len(found), max(d.timestamp for d in found))
             for device_id, found in sorted(by_device.items())
+        ]
+
+    def series(
+        self, device_id: str, start: datetime, end: datetime, bucket: timedelta
+    ) -> list[SeriesPoint]:
+        groups: dict[int, list[Detection]] = {}
+        for detection in self.list_between(device_id, start, end):
+            index = (detection.timestamp - start) // bucket
+            groups.setdefault(index, []).append(detection)
+        return [
+            SeriesPoint(
+                bucket_start=start + index * bucket,
+                readings=len(found),
+                readings_with_pigeons=sum(1 for d in found if d.has_pigeons),
+                mean_pigeons=sum(d.pigeon_count for d in found) / len(found),
+                max_pigeons=max(d.pigeon_count for d in found),
+            )
+            for index, found in sorted(groups.items())
         ]
