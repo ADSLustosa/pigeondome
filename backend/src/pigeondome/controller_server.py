@@ -20,7 +20,12 @@ from pigeondome.adapters.postgres_actuation import (
     PostgresControllerFlags,
     PostgresDecisionRepository,
 )
+from pigeondome.adapters.postgres_status import (
+    PostgresActuatorStateRepository,
+    PostgresControllerStatusRepository,
+)
 from pigeondome.application.controller_service import ControllerService
+from pigeondome.application.heartbeat import ControllerHeartbeat
 from pigeondome.config import DatabaseSettings, MqttSettings
 from pigeondome.controller_config import ControllerSettings
 from pigeondome.domain.actuation import Mode
@@ -39,7 +44,10 @@ BANNERS = {
 def serve(settings: ControllerSettings, mqtt_settings: MqttSettings, pool: ConnectionPool) -> None:
     tracker = ActuatorStateTracker()
     handler = ActuatorMessageHandler(
-        settings.actuator_id, tracker, PostgresActuatorEventRepository(pool)
+        settings.actuator_id,
+        tracker,
+        PostgresActuatorEventRepository(pool),
+        PostgresActuatorStateRepository(pool),
     )
     bridge = ControllerMqtt(mqtt_settings, settings.actuator_id, handler)
     service = ControllerService(
@@ -51,6 +59,13 @@ def serve(settings: ControllerSettings, mqtt_settings: MqttSettings, pool: Conne
         PostgresControllerFlags(pool),
         tracker,
         bridge,
+    )
+    heartbeat = ControllerHeartbeat(
+        PostgresControllerStatusRepository(pool),
+        settings.policy.mode,
+        settings.camera_id,
+        settings.actuator_id,
+        datetime.now(UTC),
     )
     log.warning(
         "%s (câmera=%s, atuador=%s)",
@@ -64,8 +79,12 @@ def serve(settings: ControllerSettings, mqtt_settings: MqttSettings, pool: Conne
     bridge.start()
     try:
         while not stop.wait(settings.tick_s):
+            now = datetime.now(UTC)
             try:
-                service.step(datetime.now(UTC))
+                service.step(now)
+                # o batimento só sai depois de um passo completo: se todo passo falha,
+                # o painel enxerga o controlador como parado
+                heartbeat.beat(now)
             except Exception:  # um passo com defeito não derruba o controlador (e não aciona nada)
                 log.exception("falha inesperada em um passo do controlador")
     finally:
