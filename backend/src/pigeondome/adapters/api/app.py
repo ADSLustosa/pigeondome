@@ -1,7 +1,7 @@
 """API HTTP de leitura (adaptador de entrada): expõe as medições de presença."""
 
 import math
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from datetime import UTC, datetime, timedelta
 from typing import Annotated, Any, Literal
 
@@ -9,6 +9,12 @@ from fastapi import FastAPI, Path, Query
 from fastapi.middleware.cors import CORSMiddleware
 
 from pigeondome import __version__
+from pigeondome.adapters.api.actuation_routes import (
+    ACTION_HEADER,
+    ActuationPorts,
+    register_actuation_routes,
+    utc_now,
+)
 from pigeondome.adapters.api.errors import (
     ApiError,
     FieldError,
@@ -86,7 +92,12 @@ def _resolve_window(
     return start, end
 
 
-def create_app(repository: DetectionRepository, allowed_origins: Sequence[str] = ()) -> FastAPI:
+def create_app(
+    repository: DetectionRepository,
+    allowed_origins: Sequence[str] = (),
+    actuation: ActuationPorts | None = None,
+    clock: Callable[[], datetime] = utc_now,
+) -> FastAPI:
     app = FastAPI(
         title="Pigeondome API",
         version=__version__,
@@ -96,10 +107,13 @@ def create_app(repository: DetectionRepository, allowed_origins: Sequence[str] =
         app.add_middleware(
             CORSMiddleware,
             allow_origins=list(allowed_origins),
-            allow_methods=["GET"],
-            allow_headers=[],
+            # com as rotas de atuação, o painel também pode fazer o POST que liga a chave geral
+            allow_methods=["GET", "POST"] if actuation is not None else ["GET"],
+            allow_headers=[ACTION_HEADER] if actuation is not None else [],
         )
     register_error_handlers(app)
+    if actuation is not None:
+        register_actuation_routes(app, actuation, clock)
 
     presence = GetPresenceStats(repository)
     series_use_case = GetPresenceSeries(repository)
