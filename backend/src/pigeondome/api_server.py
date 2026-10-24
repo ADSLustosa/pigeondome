@@ -7,8 +7,18 @@ import psycopg
 import uvicorn
 from psycopg_pool import ConnectionPool
 
+from pigeondome.adapters.api.actuation_routes import ActuationPorts
 from pigeondome.adapters.api.app import create_app
 from pigeondome.adapters.postgres import PostgresDetectionRepository
+from pigeondome.adapters.postgres_actuation import (
+    PostgresActuatorEventRepository,
+    PostgresControllerFlags,
+    PostgresDecisionRepository,
+)
+from pigeondome.adapters.postgres_status import (
+    PostgresActuatorStateRepository,
+    PostgresControllerStatusRepository,
+)
 from pigeondome.config import ApiSettings, DatabaseSettings
 from pigeondome.migrate import apply_migrations
 
@@ -30,7 +40,14 @@ def main() -> int:
         pool = ConnectionPool(db.conninfo, min_size=1, max_size=4, open=True)
         try:
             pool.wait(timeout=10)
-            app = create_app(PostgresDetectionRepository(pool), api.allowed_origins)
+            ports = ActuationPorts(
+                actuators=PostgresActuatorStateRepository(pool),
+                controller=PostgresControllerStatusRepository(pool),
+                decisions=PostgresDecisionRepository(pool),
+                events=PostgresActuatorEventRepository(pool),
+                flags=PostgresControllerFlags(pool),
+            )
+            app = create_app(PostgresDetectionRepository(pool), api.allowed_origins, ports)
             uvicorn.run(app, host=api.host, port=api.port, log_level="info")
         finally:
             pool.close()
