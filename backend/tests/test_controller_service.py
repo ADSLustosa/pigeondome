@@ -208,3 +208,33 @@ def test_the_daily_budget_survives_a_restart() -> None:
     second = world.step(10, restarted)
     assert second is not None and second.reason is Reason.DAILY_BUDGET
     assert len(world.sender.calls) == 1
+
+
+def test_dry_run_history_does_not_hold_back_the_first_live_pulse() -> None:
+    rehearsal = World(PolicyConfig(mode=Mode.DRY_RUN))
+    rehearsal.preload()
+    rehearsed = rehearsal.step(0)
+    assert rehearsed is not None and rehearsed.verdict is Verdict.WOULD_PULSE
+    live = World(
+        PolicyConfig(mode=Mode.LIVE),
+        detections=rehearsal.detections,
+        decisions=rehearsal.decisions,
+    )
+    decision = live.step(1)  # 1 s depois do ensaio: o intervalo mínimo real ainda não começou
+    assert decision is not None and decision.verdict is Verdict.PULSE
+    assert len(live.sender.calls) == 1
+
+
+def test_dry_run_history_does_not_consume_the_live_daily_budget() -> None:
+    rehearsal = World(PolicyConfig(mode=Mode.DRY_RUN, retry_gap_s=0.0, max_pulses_per_day=1))
+    rehearsal.preload()
+    rehearsed = rehearsal.step(0)
+    assert rehearsed is not None and rehearsed.verdict is Verdict.WOULD_PULSE
+    live = World(
+        PolicyConfig(mode=Mode.LIVE, retry_gap_s=0.0, max_pulses_per_day=1),
+        detections=rehearsal.detections,
+        decisions=rehearsal.decisions,
+    )
+    decision = live.step(1)
+    assert decision is not None and decision.verdict is Verdict.PULSE
+    assert len(live.sender.calls) == 1

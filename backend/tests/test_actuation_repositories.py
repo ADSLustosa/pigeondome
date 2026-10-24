@@ -134,8 +134,8 @@ def test_decisions_are_ordered_inside_a_half_open_window(stores: Stores) -> None
 def test_other_actuators_are_ignored(stores: Stores) -> None:
     stores.decisions.add(decision(0, actuator="act-outro"))
     assert stores.decisions.list_between(ACTUATOR, T0, T0 + HOUR) == []
-    assert stores.decisions.count_triggered_between(ACTUATOR, T0, T0 + HOUR) == 0
-    assert stores.decisions.last_triggered_at(ACTUATOR) is None
+    assert stores.decisions.count_triggered_between(ACTUATOR, T0, T0 + HOUR, Mode.LIVE) == 0
+    assert stores.decisions.last_triggered_at(ACTUATOR, Mode.LIVE) is None
 
 
 def test_count_triggered_ignores_skips_and_respects_the_window(stores: Stores) -> None:
@@ -143,15 +143,66 @@ def test_count_triggered_ignores_skips_and_respects_the_window(stores: Stores) -
     stores.decisions.add(decision(10, triggered=False))
     stores.decisions.add(decision(20))
     stores.decisions.add(decision(60))  # fim da janela: fora
-    assert stores.decisions.count_triggered_between(ACTUATOR, T0, T0 + timedelta(seconds=60)) == 2
+    window_end = T0 + timedelta(seconds=60)
+    assert stores.decisions.count_triggered_between(ACTUATOR, T0, window_end, Mode.LIVE) == 2
 
 
 def test_last_triggered_at_ignores_skips(stores: Stores) -> None:
-    assert stores.decisions.last_triggered_at(ACTUATOR) is None
+    assert stores.decisions.last_triggered_at(ACTUATOR, Mode.LIVE) is None
     stores.decisions.add(decision(10))
     stores.decisions.add(decision(50))
     stores.decisions.add(decision(90, triggered=False))
-    assert stores.decisions.last_triggered_at(ACTUATOR) == T0 + timedelta(seconds=50)
+    assert stores.decisions.last_triggered_at(ACTUATOR, Mode.LIVE) == T0 + timedelta(seconds=50)
+
+
+# --- o modo entra na conta: contrafactuais só valem no próprio modo ----------------------------
+
+
+def triggers(stores: Stores, mode: Mode) -> tuple[int, datetime | None]:
+    """Disparos do dia e o último, do ponto de vista de `mode`."""
+    count = stores.decisions.count_triggered_between(ACTUATOR, T0, T0 + HOUR, mode)
+    return count, stores.decisions.last_triggered_at(ACTUATOR, mode)
+
+
+def test_dry_run_would_pulse_does_not_count_for_live(stores: Stores) -> None:
+    rehearsal = decision(
+        30,
+        mode=Mode.DRY_RUN,
+        verdict=Verdict.WOULD_PULSE,
+        reason=Reason.DRY_RUN,
+        command_id=None,
+    )
+    stores.decisions.add(rehearsal)
+    assert triggers(stores, Mode.LIVE) == (0, None)
+    assert triggers(stores, Mode.DRY_RUN) == (1, T0 + timedelta(seconds=30))
+    stores.decisions.add(decision(0))  # pulso real, mais antigo que o ensaio
+    assert triggers(stores, Mode.LIVE) == (1, T0)
+    assert triggers(stores, Mode.DRY_RUN) == (2, T0 + timedelta(seconds=30))
+
+
+def test_experiment_control_does_not_count_for_live_but_the_treated_pulse_does(
+    stores: Stores,
+) -> None:
+    treated = decision(0, mode=Mode.EXPERIMENT, arm=Arm.TREATMENT)
+    control = decision(
+        30,
+        mode=Mode.EXPERIMENT,
+        arm=Arm.CONTROL,
+        verdict=Verdict.SKIP,
+        reason=Reason.EXPERIMENT_CONTROL,
+        duration_s=None,
+        command_id=None,
+    )
+    stores.decisions.add(treated)
+    stores.decisions.add(control)
+    assert triggers(stores, Mode.LIVE) == (1, T0)
+    assert triggers(stores, Mode.EXPERIMENT) == (2, T0 + timedelta(seconds=30))
+
+
+def test_real_pulses_count_in_every_mode(stores: Stores) -> None:
+    stores.decisions.add(decision(0))
+    for mode in Mode:
+        assert triggers(stores, mode) == (1, T0)
 
 
 # --- eventos do atuador -------------------------------------------------------------------
@@ -210,9 +261,11 @@ FAILING_CALLS = {
         ACTUATOR, T0, T0 + HOUR
     ),
     "decision_count": lambda pool: PostgresDecisionRepository(pool).count_triggered_between(
-        ACTUATOR, T0, T0 + HOUR
+        ACTUATOR, T0, T0 + HOUR, Mode.LIVE
     ),
-    "decision_last": lambda pool: PostgresDecisionRepository(pool).last_triggered_at(ACTUATOR),
+    "decision_last": lambda pool: PostgresDecisionRepository(pool).last_triggered_at(
+        ACTUATOR, Mode.LIVE
+    ),
     "event_add": lambda pool: PostgresActuatorEventRepository(pool).add(event(0)),
     "event_list": lambda pool: PostgresActuatorEventRepository(pool).list_between(
         ACTUATOR, T0, T0 + HOUR

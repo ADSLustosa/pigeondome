@@ -3,6 +3,7 @@
 from datetime import datetime, timedelta
 from typing import Protocol
 
+from pigeondome.domain.actuation import Mode
 from pigeondome.domain.actuation_log import ActuatorEventRecord, DecisionRecord
 from pigeondome.domain.models import Detection, DeviceSummary, SeriesPoint
 
@@ -46,12 +47,19 @@ class DecisionRepository(Protocol):
         """Decisões do atuador em [start, end), ordenadas por tempo."""
         ...
 
-    def count_triggered_between(self, actuator_id: str, start: datetime, end: datetime) -> int:
-        """Quantas decisões em [start, end) atenderam todas as condições (`triggered`)."""
+    def count_triggered_between(
+        self, actuator_id: str, start: datetime, end: datetime, mode: Mode
+    ) -> int:
+        """Quantos disparos em [start, end) contam para o orçamento do modo `mode`.
+
+        Pulso real (veredito `pulse`) conta em qualquer modo: o atuador o recebeu de verdade.
+        Disparo contrafactual (`would_pulse` do modo seco, controle do experimento) só conta
+        no próprio modo: nada foi enviado, então não gasta orçamento nem intervalo do modo real.
+        """
         ...
 
-    def last_triggered_at(self, actuator_id: str) -> datetime | None:
-        """Instante do último disparo do atuador, ou None se nunca houve."""
+    def last_triggered_at(self, actuator_id: str, mode: Mode) -> datetime | None:
+        """Instante do último disparo que conta para `mode` (mesma regra), ou None se nunca."""
         ...
 
 
