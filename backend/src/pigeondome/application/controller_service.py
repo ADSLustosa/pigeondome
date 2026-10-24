@@ -66,7 +66,7 @@ class ControllerService:
         self._decisions = decisions
         self._status = status
         self._sender = sender
-        self._context = LoadPolicyContext(decisions, flags, policy.utc_offset_hours)
+        self._context = LoadPolicyContext(decisions, flags, policy.utc_offset_hours, policy.mode)
         self._last_key: tuple[Reason, str] | None = None
         self._own_triggers: list[datetime] = []
 

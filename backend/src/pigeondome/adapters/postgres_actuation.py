@@ -22,12 +22,17 @@ _SELECT_DECISIONS: LiteralString = (
     "WHERE actuator_id = %s AND decided_at >= %s AND decided_at < %s "
     "ORDER BY decided_at, camera_id"
 )
+# Um disparo conta para o modo atual se foi um pulso real (sempre) ou se é do próprio modo
+# (contrafactuais: would_pulse do modo seco e controles do experimento). É a mesma regra de
+# _counts_for em memory_actuation.py; o teste de contrato roda os dois adaptadores.
 _COUNT_TRIGGERED: LiteralString = (
     "SELECT count(*) FROM actuation_decisions "
-    "WHERE actuator_id = %s AND triggered AND decided_at >= %s AND decided_at < %s"
+    "WHERE actuator_id = %s AND triggered AND (verdict = 'pulse' OR mode = %s) "
+    "AND decided_at >= %s AND decided_at < %s"
 )
 _LAST_TRIGGERED: LiteralString = (
-    "SELECT max(decided_at) FROM actuation_decisions WHERE actuator_id = %s AND triggered"
+    "SELECT max(decided_at) FROM actuation_decisions "
+    "WHERE actuator_id = %s AND triggered AND (verdict = 'pulse' OR mode = %s)"
 )
 _INSERT_EVENT: LiteralString = (
     "INSERT INTO actuator_events (occurred_at, actuator_id, event, command_id, reason_code) "
@@ -102,19 +107,22 @@ class PostgresDecisionRepository:
             raise StorageError("falha ao consultar as decisões") from exc
         return [_decision_from_row(row) for row in rows]
 
-    def count_triggered_between(self, actuator_id: str, start: datetime, end: datetime) -> int:
+    def count_triggered_between(
+        self, actuator_id: str, start: datetime, end: datetime, mode: Mode
+    ) -> int:
+        params = (actuator_id, mode.value, start, end)
         try:
             with self._pool.connection() as conn:
-                row = conn.execute(_COUNT_TRIGGERED, (actuator_id, start, end)).fetchone()
+                row = conn.execute(_COUNT_TRIGGERED, params).fetchone()
         except psycopg.Error as exc:
             raise StorageError("falha ao contar os disparos") from exc
         count: int = row[0] if row else 0
         return count
 
-    def last_triggered_at(self, actuator_id: str) -> datetime | None:
+    def last_triggered_at(self, actuator_id: str, mode: Mode) -> datetime | None:
         try:
             with self._pool.connection() as conn:
-                row = conn.execute(_LAST_TRIGGERED, (actuator_id,)).fetchone()
+                row = conn.execute(_LAST_TRIGGERED, (actuator_id, mode.value)).fetchone()
         except psycopg.Error as exc:
             raise StorageError("falha ao consultar o último disparo") from exc
         last: datetime | None = row[0] if row else None

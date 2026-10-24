@@ -3,7 +3,13 @@
 import threading
 from datetime import datetime
 
+from pigeondome.domain.actuation import Mode, Verdict
 from pigeondome.domain.actuation_log import ActuatorEventRecord, DecisionRecord
+
+
+def _counts_for(record: DecisionRecord, mode: Mode) -> bool:
+    """Um disparo conta para `mode` se foi um pulso real ou se é do próprio modo."""
+    return record.triggered and (record.verdict is Verdict.PULSE or record.mode is mode)
 
 
 class InMemoryDecisionRepository:
@@ -29,11 +35,14 @@ class InMemoryDecisionRepository:
         found = [r for r in self._of(actuator_id) if start <= r.decided_at < end]
         return sorted(found, key=lambda r: (r.decided_at, r.camera_id))
 
-    def count_triggered_between(self, actuator_id: str, start: datetime, end: datetime) -> int:
-        return sum(1 for r in self.list_between(actuator_id, start, end) if r.triggered)
+    def count_triggered_between(
+        self, actuator_id: str, start: datetime, end: datetime, mode: Mode
+    ) -> int:
+        found = self.list_between(actuator_id, start, end)
+        return sum(1 for r in found if _counts_for(r, mode))
 
-    def last_triggered_at(self, actuator_id: str) -> datetime | None:
-        times = [r.decided_at for r in self._of(actuator_id) if r.triggered]
+    def last_triggered_at(self, actuator_id: str, mode: Mode) -> datetime | None:
+        times = [r.decided_at for r in self._of(actuator_id) if _counts_for(r, mode)]
         return max(times) if times else None
 
 

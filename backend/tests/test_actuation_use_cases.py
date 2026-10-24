@@ -37,9 +37,11 @@ def record(when: datetime, *, triggered: bool = True, actuator: str = ACTUATOR) 
 
 
 def load(
-    decisions: InMemoryDecisionRepository, flags: InMemoryControllerFlags | None = None
+    decisions: InMemoryDecisionRepository,
+    flags: InMemoryControllerFlags | None = None,
+    mode: Mode = Mode.LIVE,
 ) -> PolicyContext:
-    use_case = LoadPolicyContext(decisions, flags or InMemoryControllerFlags(), -3)
+    use_case = LoadPolicyContext(decisions, flags or InMemoryControllerFlags(), -3, mode)
     return use_case.execute(ACTUATOR, NOW)
 
 
@@ -73,3 +75,18 @@ def test_the_kill_switch_comes_from_the_flags() -> None:
     assert load(InMemoryDecisionRepository(), flags).kill_switch is False
     flags.set_kill_switch(True, NOW)
     assert load(InMemoryDecisionRepository(), flags).kill_switch is True
+
+
+def test_counterfactual_triggers_only_count_in_their_own_mode() -> None:
+    decisions = InMemoryDecisionRepository()
+    rehearsal = replace(
+        record(NOW - timedelta(seconds=30)),
+        mode=Mode.DRY_RUN,
+        verdict=Verdict.WOULD_PULSE,
+        reason=Reason.DRY_RUN,
+        command_id=None,
+    )
+    decisions.add(rehearsal)
+    assert load(decisions, mode=Mode.LIVE) == PolicyContext(False, 0, None)
+    in_dry_run = load(decisions, mode=Mode.DRY_RUN)
+    assert (in_dry_run.pulses_today, in_dry_run.last_pulse_at) == (1, rehearsal.decided_at)
