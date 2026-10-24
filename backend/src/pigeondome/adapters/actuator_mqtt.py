@@ -13,16 +13,20 @@ import paho.mqtt.client as mqtt
 from paho.mqtt.enums import CallbackAPIVersion
 
 from pigeondome.application.controller_service import CommandSendError
-from pigeondome.application.ports import ActuatorEventRepository, StorageError
+from pigeondome.application.ports import (
+    ActuatorEventRepository,
+    ActuatorStateRepository,
+    StorageError,
+)
 from pigeondome.config import MqttSettings
 from pigeondome.domain.actuation import ActuatorStatus
 from pigeondome.domain.actuation_log import ActuatorEventRecord
+from pigeondome.domain.status import ACTUATOR_STATES, MAX_BUDGET_S, ActuatorStateRecord
 
 log = logging.getLogger("pigeondome.controller")
 
 COMMAND_TTL_S = 10
 MAX_PAYLOAD_BYTES = 4096
-ACTUATOR_STATES = frozenset({"safe_off", "idle", "pulsing", "cooldown", "maintenance", "fault"})
 
 
 def command_topic(actuator_id: str) -> str:
@@ -47,6 +51,17 @@ def _load_object(raw: bytes) -> dict[str, Any] | None:
     except ValueError:
         return None
     return data if isinstance(data, dict) else None
+
+
+def _optional_bool(value: object) -> bool | None:
+    return value if isinstance(value, bool) else None
+
+
+def _optional_budget(value: object) -> int | None:
+    """Orçamento horário relatado; qualquer coisa fora de 0..3600 vira 'sem dado'."""
+    if isinstance(value, bool) or not isinstance(value, int):
+        return None
+    return value if 0 <= value <= MAX_BUDGET_S else None
 
 
 def build_pulse_command(
@@ -93,11 +108,17 @@ class MessageOutcome(Enum):
 
 class ActuatorMessageHandler:
     def __init__(
-        self, actuator_id: str, tracker: ActuatorStateTracker, events: ActuatorEventRepository
+        self,
+        actuator_id: str,
+        tracker: ActuatorStateTracker,
+        events: ActuatorEventRepository,
+        states: ActuatorStateRepository | None = None,
     ) -> None:
         self._actuator_id = actuator_id
         self._tracker = tracker
         self._events = events
+        # None desliga a gravação do estado para o painel; o controle não depende dela.
+        self._states = states
 
     def handle(self, topic: str, raw: bytes, now: datetime) -> MessageOutcome:
         if topic not in (state_topic(self._actuator_id), events_topic(self._actuator_id)):
@@ -123,6 +144,22 @@ class ActuatorMessageHandler:
             return MessageOutcome.REJECTED
         # O frescor é medido na RECEPÇÃO, com o relógio do controlador (não o do atuador).
         self._tracker.update(online=online, state=state, received_at=now)
+        if self._states is None:
+            return MessageOutcome.STATE_UPDATED
+        # Campos de exibição NUNCA rejeitam o estado: o controle depende só de online e state.
+        record = ActuatorStateRecord(
+            self._actuator_id,
+            online,
+            state,
+            _optional_bool(data.get("output_on")),
+            _optional_budget(data.get("budget_used_s_1h")),
+            now,
+        )
+        try:
+            self._states.save(record)
+        except StorageError:
+            log.warning("estado do atuador não gravado: banco indisponível")
+            return MessageOutcome.STORAGE_ERROR  # o rastreador já foi atualizado acima
         return MessageOutcome.STATE_UPDATED
 
     def _handle_event(self, data: dict[str, Any]) -> MessageOutcome:

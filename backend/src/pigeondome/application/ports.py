@@ -6,6 +6,7 @@ from typing import Protocol
 from pigeondome.domain.actuation import Mode
 from pigeondome.domain.actuation_log import ActuatorEventRecord, DecisionRecord
 from pigeondome.domain.models import Detection, DeviceSummary, SeriesPoint
+from pigeondome.domain.status import ActuatorStateRecord, ControllerStatusRecord
 
 
 class StorageError(Exception):
@@ -82,4 +83,24 @@ class ControllerFlags(Protocol):
 
     def set_kill_switch(self, enabled: bool, now: datetime) -> None:
         """Liga ou desliga a chave geral do controlador."""
+        ...
+
+
+class ActuatorStateRepository(Protocol):
+    def save(self, record: ActuatorStateRecord) -> None:
+        """Grava o último estado do atuador. Um registro mais antigo nunca sobrescreve um novo."""
+        ...
+
+    def get(self, actuator_id: str) -> ActuatorStateRecord | None:
+        """O último estado gravado, ou None se o atuador nunca foi visto."""
+        ...
+
+
+class ControllerStatusRepository(Protocol):
+    def save(self, record: ControllerStatusRecord) -> None:
+        """Grava o estado do controlador. Um batimento mais antigo nunca sobrescreve um novo."""
+        ...
+
+    def get(self) -> ControllerStatusRecord | None:
+        """O último estado gravado, ou None se o controlador nunca rodou."""
         ...
