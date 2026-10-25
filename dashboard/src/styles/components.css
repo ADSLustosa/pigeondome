@@ -9,9 +9,10 @@
 
 .app-header__inner {
   display: flex;
+  flex-wrap: wrap; /* em telas estreitas as ações descem para uma segunda linha */
   align-items: center;
   justify-content: space-between;
-  gap: var(--space-4);
+  gap: var(--space-2) var(--space-4);
   padding-block: var(--space-3);
 }
 
@@ -36,6 +37,7 @@
   display: flex;
   align-items: center;
   gap: var(--space-3);
+  margin-left: auto;
 }
 
 /* Estado da conexão */
@@ -105,6 +107,10 @@
 /* Página */
 .page {
   display: grid;
+  /* sem isto a coluna do grid é "auto" e cresce até o conteúdo que não quebra (tabelas
+     largas), esticando a página inteira além da tela; minmax(0, 1fr) a prende à largura
+     do contêiner e deixa cada tabela rolar dentro do próprio quadro */
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--space-6);
   padding-block: var(--space-6) var(--space-7);
 }
@@ -535,4 +541,62 @@ select:disabled {
   stroke: var(--text);
   stroke-width: 1.5;
   opacity: 0.45;
+}
+
+/* Tabela de dados da série em telas estreitas: cabe em 320 px sem rolar de lado.
+   A troca depende da largura do QUADRO (container query), não da tela. Em largura menor que
+   34 rem os cabeçalhos viram versões curtas (o nome completo continua na página, só para
+   leitores de tela), os espaços diminuem e o dia, quando aparece, vai para uma linha própria. */
+.data-table__scroll {
+  container: series-table / inline-size;
+}
+
+.data-table .col-short {
+  display: none;
+}
+
+.data-table__day {
+  margin-right: var(--space-2);
+  color: var(--text-muted);
+}
+
+@container series-table (max-width: 34rem) {
+  .data-table table {
+    font-size: 0.8125rem;
+  }
+
+  .data-table th,
+  .data-table td {
+    padding: var(--space-2) 0.1875rem;
+  }
+
+  .data-table thead th {
+    font-size: 0.6875rem;
+    letter-spacing: 0;
+    line-height: 1.2;
+    vertical-align: bottom;
+  }
+
+  .data-table .col-short {
+    display: inline;
+  }
+
+  .data-table .col-full {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  .data-table__day {
+    display: block;
+    margin: 0;
+    font-size: 0.6875rem;
+    line-height: 1.2;
+  }
 }
