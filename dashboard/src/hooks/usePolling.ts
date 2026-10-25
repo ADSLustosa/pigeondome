@@ -1,9 +1,14 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 
 export interface PollingState<T> {
   data: T | null
   error: Error | null
   updatedAt: Date | null
+}
+
+export interface Polling<T> extends PollingState<T> {
+  /** Busca de novo agora e recomeça a contagem do intervalo. */
+  refresh: () => void
 }
 
 function toError(value: unknown): Error {
@@ -18,8 +23,10 @@ function toError(value: unknown): Error {
 export function usePolling<T>(
   fetcher: (signal: AbortSignal) => Promise<T>,
   intervalMs: number,
-): PollingState<T> {
+): Polling<T> {
   const [state, setState] = useState<PollingState<T>>({ data: null, error: null, updatedAt: null })
+  const [round, setRound] = useState(0)
+  const refresh = useCallback(() => setRound((value) => value + 1), [])
 
   useEffect(() => {
     const controller = new AbortController()
@@ -42,7 +49,7 @@ export function usePolling<T>(
       controller.abort()
       clearTimeout(timer)
     }
-  }, [fetcher, intervalMs])
+  }, [fetcher, intervalMs, round])
 
-  return state
+  return { ...state, refresh }
 }

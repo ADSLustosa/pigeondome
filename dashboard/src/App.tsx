@@ -1,16 +1,19 @@
 import { useCallback, useState } from 'react'
 import { listDevices } from './api/client'
+import { ActuationSection } from './components/ActuationSection'
 import { Controls } from './components/Controls'
 import { ErrorNotice } from './components/ErrorNotice'
 import { Header } from './components/Header'
 import { PresencePanel } from './components/PresencePanel'
 import { SeriesSection } from './components/SeriesSection'
 import type { ConnectionStatus } from './components/StatusChip'
+import { TrailSection } from './components/TrailSection'
 import { DEVICES_POLL_MS } from './config'
 import { usePolling } from './hooks/usePolling'
 import { useTheme } from './hooks/useTheme'
 import { DEFAULT_WINDOW_ID, presetById } from './lib/windows'
 import type { WindowId } from './lib/windows'
+import './styles/actuation.css'
 
 export default function App() {
   const { theme, toggle } = useTheme()
@@ -42,6 +45,8 @@ export default function App() {
           />
         ) : null}
 
+        {devices.data ? <ActuationSection /> : null}
+
         {devices.data && deviceList.length === 0 ? (
           <div className="empty-state">
             <strong>Nenhum dispositivo enviou dados ainda</strong>
@@ -65,6 +70,8 @@ export default function App() {
             <SeriesSection key={`series:${deviceId}:${windowId}`} deviceId={deviceId} preset={preset} />
           </>
         ) : null}
+
+        {devices.data ? <TrailSection /> : null}
       </main>
     </>
   )
