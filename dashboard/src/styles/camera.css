@@ -1,0 +1,76 @@
+/* Câmera ao vivo. Só tokens: nenhuma cor solta. */
+
+.cam {
+  display: grid;
+  gap: var(--space-3);
+  max-width: 30rem;
+}
+
+.cam__status {
+  margin: 0;
+}
+
+.cam__frame {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface-muted);
+  box-shadow: var(--shadow-card);
+}
+
+.cam__image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition:
+    opacity var(--duration),
+    filter var(--duration);
+}
+
+/* quadro velho: continua visível, mas claramente não é o agora */
+.cam__frame--stale .cam__image {
+  opacity: 0.45;
+  filter: grayscale(1);
+}
+
+.cam__placeholder {
+  width: 100%;
+  height: 100%;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .cam__frame--loading .cam__placeholder {
+    animation: act-pulse 1.4s ease-in-out infinite;
+  }
+}
+
+/* botão de abrir e fechar: área de toque de 44 px */
+.cam__toggle {
+  min-height: 2.75rem;
+  margin-bottom: var(--space-3);
+  padding: 0 var(--space-5);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background var(--duration),
+    border-color var(--duration);
+}
+
+.cam__toggle:hover {
+  background: var(--surface-muted);
+  border-color: var(--accent);
+}
+
+.cam__toggle:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}

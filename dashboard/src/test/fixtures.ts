@@ -113,3 +113,26 @@ export const EVENTS: ActuatorEvents = {
     },
   ],
 }
+
+export const DEVICES = [
+  { device_id: 'cam-sim-01', readings: 57, last_detected_at: '2026-10-22T22:32:37Z' },
+]
+
+export const PRESENCE = {
+  device_id: 'cam-sim-01',
+  start: '2026-10-22T21:33:00Z',
+  end: '2026-10-22T22:33:00Z',
+  readings: 57,
+  readings_with_pigeons: 54,
+  presence_rate: 0.9473684,
+  mean_pigeons: 3.9824561,
+  max_pigeons: 8,
+}
+
+export const SERIES = {
+  device_id: 'cam-sim-01',
+  start: '2026-10-22T21:33:00Z',
+  end: '2026-10-22T22:33:00Z',
+  bucket: '1m',
+  points: [],
+}

@@ -6,9 +6,14 @@ export type PageSize = (typeof PAGE_SIZES)[number]
 const NARROW_SCREEN = '(max-width: 40rem)'
 
 export function defaultPageSize(): PageSize {
-  return window.matchMedia(NARROW_SCREEN).matches ? 5 : 10
+  return isNarrowScreen() ? 5 : 10
 }
 
 export function shownText(shown: number, total: number, noun: string): string {
   return `Mostrando ${shown} de ${total} ${noun}. Aumente em “Linhas” para ver mais.`
+}
+
+/** Tela estreita (celular): a interface começa com menos conteúdo aberto. */
+export function isNarrowScreen(): boolean {
+  return window.matchMedia(NARROW_SCREEN).matches
 }

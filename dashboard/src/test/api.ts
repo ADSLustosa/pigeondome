@@ -61,3 +61,9 @@ export function mockApi(routes: readonly Route[]): { calls: Call[] } {
   )
   return { calls }
 }
+
+/** Um quadro JPEG mínimo: para o painel só importam a assinatura e o tipo da resposta. */
+export const jpeg = (): Response =>
+  new Response(new Uint8Array([0xff, 0xd8, 0xff, 0xe0]), {
+    headers: { 'content-type': 'image/jpeg' },
+  })
