@@ -1,21 +1,93 @@
-MIT License
+PIGEONDOME — LICENÇA PROPRIETÁRIA · PROPRIETARY LICENSE
 
-Copyright (c) 2026 João Pedro Lustosa
+Copyright (c) 2026 @ADSLustosa. Todos os direitos reservados.
+Copyright (c) 2026 @ADSLustosa. All rights reserved.
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+========================================================================
+PORTUGUÊS (BRASIL)
+========================================================================
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+1. Consulta. Este repositório é público para que o código-fonte e a
+   documentação possam ser lidos. Você pode ler o conteúdo e, nos termos
+   dos Termos de Serviço do GitHub, visualizar e fazer fork deste
+   repositório dentro da plataforma GitHub.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+2. Nenhum outro direito. Exceto pelo que o item 1 descreve, nenhuma licença
+   ou direito é concedido. Sem autorização prévia e por escrito do titular,
+   é proibido: (a) executar, implantar ou operar o software; (b) copiar ou
+   reproduzir o software, ou partes dele, fora da plataforma GitHub;
+   (c) modificar o software ou criar obras derivadas; (d) distribuir,
+   sublicenciar, vender, alugar ou oferecer o software, ou partes dele,
+   como produto ou serviço; (e) usar o conteúdo deste repositório para
+   treinar modelos de aprendizado de máquina.
+
+3. Autorização e compra. Uso comercial, ou qualquer uso além da consulta,
+   exige licença concedida por escrito pelo titular, que pode ser onerosa.
+   Contato: https://www.linkedin.com/in/adslustosa
+
+4. Componentes de terceiros. As dependências do projeto continuam regidas
+   pelas licenças próprias de cada uma. Esta licença não altera esses termos.
+
+5. Marcas. O nome "Pigeondome" e o logotipo não são licenciados por este
+   documento.
+
+6. Contribuições. Este repositório não aceita contribuições de código de
+   terceiros sem um acordo escrito com o titular.
+
+7. Histórico de licenciamento. O código publicado até o commit 17696d4
+   (inclusive) foi disponibilizado sob a Licença MIT, e quem o obteve nesses
+   termos mantém os direitos que ela concedeu em relação àquela versão. Tudo
+   o que foi publicado depois desse commit está sujeito a esta licença.
+
+8. Sem garantia. O SOFTWARE É FORNECIDO "NO ESTADO EM QUE SE ENCONTRA", SEM
+   GARANTIA DE QUALQUER TIPO, EXPRESSA OU IMPLÍCITA. O projeto trata de
+   atuação em campo físico: não use este software para controlar hardware
+   real sem avaliação profissional de segurança. O titular não responde por
+   danos decorrentes do uso, na medida em que a lei permitir.
+
+9. Lei aplicável. Esta licença é regida pelas leis da República Federativa
+   do Brasil.
+
+========================================================================
+ENGLISH
+========================================================================
+
+1. Viewing. This repository is public so that the source code and
+   documentation can be read. You may read the content and, under the GitHub
+   Terms of Service, view and fork this repository within the GitHub
+   platform.
+
+2. No other rights. Except as described in item 1, no license or right is
+   granted. Without the owner's prior written authorization, you may not:
+   (a) run, deploy or operate the software; (b) copy or reproduce the
+   software, or parts of it, outside the GitHub platform; (c) modify the
+   software or create derivative works; (d) distribute, sublicense, sell,
+   rent or offer the software, or parts of it, as a product or service;
+   (e) use the contents of this repository to train machine learning models.
+
+3. Authorization and purchase. Commercial use, or any use beyond viewing,
+   requires a license granted in writing by the owner, which may be paid.
+   Contact: https://www.linkedin.com/in/adslustosa
+
+4. Third-party components. The project's dependencies remain governed by
+   their own licenses. This license does not change those terms.
+
+5. Trademarks. The name "Pigeondome" and the logo are not licensed by this
+   document.
+
+6. Contributions. This repository does not accept third-party code
+   contributions without a written agreement with the owner.
+
+7. Licensing history. The code published up to and including commit
+   17696d4 was made available under the MIT License, and anyone who
+   obtained it on those terms keeps the rights it granted for that version.
+   Everything published after that commit is subject to this license.
+
+8. No warranty. THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
+   KIND, EXPRESS OR IMPLIED. The project deals with actuation in the
+   physical world: do not use this software to control real hardware
+   without a professional safety assessment. The owner is not liable for
+   damages arising from its use, to the extent the law allows.
+
+9. Governing law. This license is governed by the laws of the Federative
+   Republic of Brazil.
