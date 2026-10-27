@@ -41,23 +41,32 @@ async function toApiError(response: Response): Promise<ApiError> {
 interface RequestOptions {
   method?: 'GET' | 'POST'
   headers?: Record<string, string>
+  accept?: string
   signal?: AbortSignal
 }
 
-async function requestJson<T>(path: string, options: RequestOptions): Promise<T> {
+async function request<T>(
+  path: string,
+  options: RequestOptions,
+  read: (response: Response) => Promise<T>,
+): Promise<T> {
   let response: Response
   try {
     response = await fetch(`${API_BASE_URL}${path}`, {
       method: options.method,
       signal: options.signal,
-      headers: { Accept: 'application/json', ...options.headers },
+      headers: { Accept: options.accept ?? 'application/json', ...options.headers },
     })
   } catch (cause) {
     if (options.signal?.aborted) throw cause
     throw new ApiError('Não foi possível conectar à API', 0)
   }
   if (!response.ok) throw await toApiError(response)
-  return (await response.json()) as T
+  return read(response)
+}
+
+function requestJson<T>(path: string, options: RequestOptions): Promise<T> {
+  return request(path, options, async (response) => (await response.json()) as T)
 }
 
 function getJson<T>(path: string, signal?: AbortSignal): Promise<T> {
@@ -130,5 +139,20 @@ export function engageKillSwitch(signal?: AbortSignal): Promise<KillSwitch> {
     method: 'POST',
     headers: { 'X-Pigeondome-Action': 'kill-switch-on' },
     signal,
+  })
+}
+
+/**
+ * O quadro mais recente da câmera (JPEG). A API repassa a imagem sem gravá-la, e o painel só a
+ * guarda na memória, como um endereço blob: liberado ao trocar de quadro.
+ */
+export function getSnapshot(deviceId: string, signal?: AbortSignal): Promise<Blob> {
+  const path = `/api/v1/devices/${encodeURIComponent(deviceId)}/snapshot`
+  return request(path, { signal, accept: 'image/jpeg' }, async (response) => {
+    const type = response.headers.get('content-type') ?? ''
+    if (!type.includes('image/jpeg')) {
+      throw new ApiError('A API não devolveu uma imagem', response.status)
+    }
+    return response.blob()
   })
 }

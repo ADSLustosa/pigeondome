@@ -1,6 +1,7 @@
 import { useCallback, useState } from 'react'
 import { listDevices } from './api/client'
 import { ActuationSection } from './components/ActuationSection'
+import { CameraSection } from './components/CameraSection'
 import { Controls } from './components/Controls'
 import { ErrorNotice } from './components/ErrorNotice'
 import { Header } from './components/Header'
@@ -14,6 +15,7 @@ import { useTheme } from './hooks/useTheme'
 import { DEFAULT_WINDOW_ID, presetById } from './lib/windows'
 import type { WindowId } from './lib/windows'
 import './styles/actuation.css'
+import './styles/camera.css'
 
 export default function App() {
   const { theme, toggle } = useTheme()
@@ -66,6 +68,7 @@ export default function App() {
               windowId={windowId}
               onWindowChange={setWindowId}
             />
+            <CameraSection deviceId={deviceId} />
             <PresencePanel key={`presence:${deviceId}:${windowId}`} deviceId={deviceId} preset={preset} />
             <SeriesSection key={`series:${deviceId}:${windowId}`} deviceId={deviceId} preset={preset} />
           </>

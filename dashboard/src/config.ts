@@ -4,6 +4,13 @@ export const API_BASE_URL: string =
 export const DEVICES_POLL_MS = 30_000
 export const PRESENCE_POLL_MS = 10_000
 export const SERIES_POLL_MS = 15_000
+
+/** Câmera ao vivo: um quadro por segundo, e só enquanto o bloco está aberto e a aba visível. */
+export const CAMERA_POLL_MS = 1_000
+/** Idade máxima do último quadro para ainda chamar a imagem de "ao vivo". */
+export const CAMERA_STALE_AFTER_S = 5
+/** Maior que o limite de 2 s da API: é ela quem deve responder o erro antes do painel desistir. */
+export const CAMERA_REQUEST_TIMEOUT_MS = 4_000
 export const ACTUATION_POLL_MS = 5_000
 export const LOG_POLL_MS = 10_000
 export const LOG_LIMIT = 50
