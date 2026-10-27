@@ -15,6 +15,7 @@ from pigeondome.adapters.api.actuation_routes import (
     register_actuation_routes,
     utc_now,
 )
+from pigeondome.adapters.api.camera_routes import register_camera_routes
 from pigeondome.adapters.api.errors import (
     ApiError,
     FieldError,
@@ -28,7 +29,7 @@ from pigeondome.adapters.api.schemas import (
     SeriesOut,
     SeriesPointOut,
 )
-from pigeondome.application.ports import DetectionRepository
+from pigeondome.application.ports import CameraSnapshots, DetectionRepository
 from pigeondome.application.use_cases import GetPresenceSeries, GetPresenceStats, ListDevices
 from pigeondome.domain.models import DEVICE_ID_PATTERN
 
@@ -97,6 +98,7 @@ def create_app(
     allowed_origins: Sequence[str] = (),
     actuation: ActuationPorts | None = None,
     clock: Callable[[], datetime] = utc_now,
+    camera: CameraSnapshots | None = None,
 ) -> FastAPI:
     app = FastAPI(
         title="Pigeondome API",
@@ -114,6 +116,8 @@ def create_app(
     register_error_handlers(app)
     if actuation is not None:
         register_actuation_routes(app, actuation, clock)
+    if camera is not None:
+        register_camera_routes(app, camera)
 
     presence = GetPresenceStats(repository)
     series_use_case = GetPresenceSeries(repository)

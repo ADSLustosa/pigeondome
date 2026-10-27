@@ -5,6 +5,7 @@ from typing import Protocol
 
 from pigeondome.domain.actuation import Mode
 from pigeondome.domain.actuation_log import ActuatorEventRecord, DecisionRecord
+from pigeondome.domain.camera import Snapshot
 from pigeondome.domain.models import Detection, DeviceSummary, SeriesPoint
 from pigeondome.domain.status import ActuatorStateRecord, ControllerStatusRecord
 
@@ -103,4 +104,22 @@ class ControllerStatusRepository(Protocol):
 
     def get(self) -> ControllerStatusRecord | None:
         """O último estado gravado, ou None se o controlador nunca rodou."""
+        ...
+
+
+class CameraNotConfiguredError(Exception):
+    """O dispositivo não tem câmera configurada para a API."""
+
+
+class CameraUnavailableError(Exception):
+    """A câmera não entregou um quadro válido (fora do ar, lenta ou com resposta inválida)."""
+
+
+class CameraSnapshots(Protocol):
+    def fetch(self, device_id: str) -> Snapshot:
+        """O quadro mais recente da câmera do dispositivo.
+
+        Levanta CameraNotConfiguredError se o dispositivo não tem câmera configurada e
+        CameraUnavailableError se a câmera não entregou um quadro JPEG válido a tempo.
+        """
         ...

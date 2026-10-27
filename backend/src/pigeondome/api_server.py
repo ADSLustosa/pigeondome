@@ -9,6 +9,7 @@ from psycopg_pool import ConnectionPool
 
 from pigeondome.adapters.api.actuation_routes import ActuationPorts
 from pigeondome.adapters.api.app import create_app
+from pigeondome.adapters.http_camera import HttpCameraSnapshots
 from pigeondome.adapters.postgres import PostgresDetectionRepository
 from pigeondome.adapters.postgres_actuation import (
     PostgresActuatorEventRepository,
@@ -40,6 +41,7 @@ def main() -> int:
         pool = ConnectionPool(db.conninfo, min_size=1, max_size=4, open=True)
         try:
             pool.wait(timeout=10)
+            camera = HttpCameraSnapshots(api.camera_snapshots) if api.camera_snapshots else None
             ports = ActuationPorts(
                 actuators=PostgresActuatorStateRepository(pool),
                 controller=PostgresControllerStatusRepository(pool),
@@ -47,7 +49,9 @@ def main() -> int:
                 events=PostgresActuatorEventRepository(pool),
                 flags=PostgresControllerFlags(pool),
             )
-            app = create_app(PostgresDetectionRepository(pool), api.allowed_origins, ports)
+            app = create_app(
+                PostgresDetectionRepository(pool), api.allowed_origins, ports, camera=camera
+            )
             uvicorn.run(app, host=api.host, port=api.port, log_level="info")
         finally:
             pool.close()

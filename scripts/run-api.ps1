@@ -5,7 +5,11 @@ $root = Split-Path $PSScriptRoot -Parent
 . "$PSScriptRoot\mqtt-env.ps1"
 $py = Get-ProjectPython $root
 
-$vars = @{ API_PORT = "$Port" }
+# a camera simulada serve o quadro em http://127.0.0.1:8081/snapshot (so neste computador)
+$vars = @{
+  API_PORT = "$Port"
+  CAMERA_SNAPSHOT_URLS = 'cam-sim-01=http://127.0.0.1:8081/snapshot'
+}
 $envFile = Join-Path $root 'infra\.env'
 foreach ($key in 'POSTGRES_PASSWORD', 'POSTGRES_PORT') {
   $hit = Select-String -Path $envFile -Pattern "^$key=" | Select-Object -First 1

@@ -14,6 +14,7 @@ class Settings:
     interval_s: float
     seed: int | None
     force_hour: int | None
+    snapshot_port: int = 8081
 
     @classmethod
     def from_env(cls) -> "Settings":
@@ -31,4 +32,5 @@ class Settings:
             interval_s=float(os.environ.get("SIM_INTERVAL_S", "5")),
             seed=int(seed) if seed else None,
             force_hour=int(force_hour) if force_hour else None,
+            snapshot_port=int(os.environ.get("SIM_SNAPSHOT_PORT", "8081")),
         )
