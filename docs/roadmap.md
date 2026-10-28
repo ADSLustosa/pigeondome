@@ -1,0 +1,62 @@
+# Roadmap
+
+O que existe, o que falta e, principalmente, **o que impede o uso com hardware real**. Esta página é a fonte de verdade do estado do projeto; o resumo do [README](../README.md#roadmap) deriva dela.
+
+> [!IMPORTANT]
+> Hoje o Pigeondome é um **protótipo simulado**. Não há evidência de que o método afaste pombos: é isso que o experimento A/B vai medir. Nenhum dispositivo que emita campo eletromagnético foi construído ou testado.
+
+## Concluído
+
+- [x] Contratos MQTT versionados, com JSON Schema, e ingestão idempotente
+- [x] Broker com autenticação e permissões por papel (ACL) testadas
+- [x] Política de decisão com modos seco, real e experimento
+- [x] Atuador simulado com limites de segurança, testes unitários e teste aleatório reprodutível
+- [x] Controlador com trilha de auditoria e chave geral
+- [x] API de leitura com erros padronizados (RFC 9457)
+- [x] Painel responsivo (a partir de 320 px), nos temas claro e escuro, com a câmera simulada ao vivo
+- [x] Identidade visual e documentação técnica
+
+## Antes de qualquer hardware real
+
+Itens **bloqueantes**: sem eles, ligar o software a um dispositivo físico não é seguro.
+
+| Item | Por que bloqueia |
+|---|---|
+| **Proteção física (camada 7)**: relé normalmente aberto, watchdog em hardware e limitação de corrente | Software sozinho não garante que a saída desligue se o processador travar. |
+| **Orçamento do atuador em memória não volátil** | Hoje um reinício zera o orçamento da última hora e permitiria exceder o limite. |
+| **Registrador de eventos independente do controlador** | Hoje, com o controlador parado, os eventos do atuador não chegam ao banco. |
+| **Avaliação de segurança elétrica** por profissional habilitado, conforme as normas aplicáveis | Nenhum projeto elétrico foi feito nem revisado. |
+| **Conformidade legal**: legislação ambiental e sanitária aplicável ao controle de aves | Não foi avaliada. |
+| **TLS no broker e autenticação na API** | Hoje tudo escuta só em `127.0.0.1`; qualquer exposição na rede precisa dos dois. |
+
+## Próximos passos
+
+### Evidência (o objetivo do projeto)
+
+- [ ] **Relatório do experimento A/B**: comparar, com estatística, os blocos de tratamento e de controle. O modo `experiment` já sorteia os blocos e registra o braço de cada decisão; falta a análise.
+- [ ] **Linha de base medida**: hoje a presença simulada segue um modelo por horário, que é uma suposição de modelagem. Precisa ser trocada por dados da instalação.
+- [ ] **Detector real de pombos** no dispositivo de borda, com a detecção feita no próprio dispositivo (sem enviar imagem).
+
+### Hardware
+
+- [ ] Lista de materiais (BOM) e projeto elétrico
+- [ ] Avaliação normativa do projeto
+- [ ] Firmware do atuador (ESP32 é o alvo planejado) com a mesma máquina de estados do simulador
+
+### Robustez
+
+- [ ] Separar o motivo `disconnected` em duas situações: conexão que cai e comando recebido com o atuador desconectado
+- [ ] Política de retenção e eliminação de dados antigos
+- [ ] Pausar a consulta do painel com a aba escondida em todos os blocos (hoje só a câmera faz isso)
+
+### Projeto
+
+- [ ] Registro de mudanças (`CHANGELOG`) e primeira versão marcada
+- [ ] Política de segurança (`SECURITY.md`) e guia de contribuição
+- [ ] Automação de dependências e análise estática de segurança no GitHub
+
+## Fora do escopo por enquanto
+
+- Mais de uma câmera ou mais de um atuador por instalação (o código usa identificadores, mas o painel acompanha um atuador).
+- Nuvem, contas de usuário e acesso remoto.
+- Qualquer uso fora do ambiente simulado.
