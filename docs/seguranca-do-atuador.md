@@ -48,8 +48,9 @@ O limite de pulso vale também no controlador: `PolicyConfig` recusa uma duraç�
 ## Máquina de estados
 
 ```mermaid
-%%{init: {"theme":"base","themeVariables":{"primaryColor":"#E6F4F1","primaryBorderColor":"#2F9E8F","primaryTextColor":"#151827","textColor":"#151827","lineColor":"#2F9E8F"}}}%%
+%%{init: {"theme":"base","themeVariables":{"primaryColor":"#E6F4F1","primaryBorderColor":"#2F9E8F","primaryTextColor":"#151827","textColor":"#151827","lineColor":"#2F9E8F","edgeLabelBackground":"#E6F4F1"}}}%%
 stateDiagram-v2
+  direction LR
   [*] --> safe_off
   safe_off --> idle: conectado e autoteste ok
   idle --> pulsing: comando válido
