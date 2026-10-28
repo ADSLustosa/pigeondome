@@ -55,30 +55,30 @@ Pigeon control is usually done without measurement: a deterrent is installed and
 ## How it works
 
 ```mermaid
+%%{init: {"theme":"base","themeVariables":{"primaryColor":"#E6F4F1","primaryBorderColor":"#2F9E8F","primaryTextColor":"#151827","textColor":"#151827","lineColor":"#2F9E8F","clusterBkg":"#F7F8FB","clusterBorder":"#C9D1DE","edgeLabelBackground":"#F7F8FB"}}}%%
 flowchart LR
-  subgraph Field["Field"]
-    CAM["Camera (simulated)"]
-    ACT["Actuator (simulated)"]
+  subgraph Campo["Field"]
+    CAM["Camera<br/>(simulated)"]
+    ACT["Actuator<br/>(simulated)"]
   end
   subgraph Infra["Infrastructure"]
     MQ(["Mosquitto<br/>per-role ACL"])
     DB[("PostgreSQL")]
   end
-  subgraph Services["Python services"]
+  subgraph Servicos["Python services"]
     ING["Ingestor"]
     CTL["Controller"]
     API["REST API"]
   end
   UI["React dashboard"]
 
-  CAM -- "detections (QoS 1)" --> MQ
+  CAM -- "detections" --> MQ
   MQ --> ING --> DB
-  DB --> CTL
-  CTL -- "commands with expiry" --> MQ --> ACT
-  ACT -- "state and events" --> MQ --> CTL
-  CTL -- "decisions, state and heartbeat" --> DB
+  CTL <-- "evidence and decisions" --> DB
+  CTL <-- "commands and state" --> MQ
+  MQ <--> ACT
   DB --> API --> UI
-  CAM -. "JPEG frame (HTTP)" .-> API
+  CAM -. "JPEG frame" .-> API
 ```
 
 1. **Detect.** The camera publishes the pigeon count over MQTT. The ingestor validates the message and stores it.

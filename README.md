@@ -55,10 +55,11 @@ Controle de pombos costuma ser feito sem medição: instala-se um dissuasor e ni
 ## Como funciona
 
 ```mermaid
+%%{init: {"theme":"base","themeVariables":{"primaryColor":"#E6F4F1","primaryBorderColor":"#2F9E8F","primaryTextColor":"#151827","textColor":"#151827","lineColor":"#2F9E8F","clusterBkg":"#F7F8FB","clusterBorder":"#C9D1DE","edgeLabelBackground":"#F7F8FB"}}}%%
 flowchart LR
   subgraph Campo["Campo"]
-    CAM["Câmera (simulada)"]
-    ACT["Atuador (simulado)"]
+    CAM["Câmera<br/>(simulada)"]
+    ACT["Atuador<br/>(simulado)"]
   end
   subgraph Infra["Infraestrutura"]
     MQ(["Mosquitto<br/>ACL por papel"])
@@ -71,14 +72,13 @@ flowchart LR
   end
   UI["Painel React"]
 
-  CAM -- "detecções (QoS 1)" --> MQ
+  CAM -- "detecções" --> MQ
   MQ --> ING --> DB
-  DB --> CTL
-  CTL -- "comandos com validade" --> MQ --> ACT
-  ACT -- "estado e eventos" --> MQ --> CTL
-  CTL -- "decisões, estado e batimento" --> DB
+  CTL <-- "evidência e decisões" --> DB
+  CTL <-- "comandos e estado" --> MQ
+  MQ <--> ACT
   DB --> API --> UI
-  CAM -. "quadro JPEG (HTTP)" .-> API
+  CAM -. "quadro JPEG" .-> API
 ```
 
 1. **Detectar.** A câmera publica a contagem de pombos por MQTT. O ingestor valida a mensagem e grava no banco.
