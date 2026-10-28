@@ -227,5 +227,8 @@ node_modules/
 .pytest_cache/
 infra/mosquitto/passwd
 
+# memória do orçamento do atuador simulado
+.pigeondome-state/
+
 # o gitignore de Python ignora qualquer pasta chamada lib/; o painel usa dashboard/src/lib/
 !dashboard/src/lib/

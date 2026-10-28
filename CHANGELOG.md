@@ -4,6 +4,10 @@ Segue o formato [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e [V
 
 ## [Não lançado]
 
+### Segurança
+
+- O orçamento do atuador (120 s de saída por hora) agora **sobrevive a reinícios**. Antes, reiniciar o atuador zerava o limite. O gasto é gravado antes de ligar a saída; memória ilegível ou gravação com falha deixam o atuador em falha `self_test`. Nova variável `ACTUATOR_STATE_DIR` e [ADR 0007](docs/decisoes/0007-orcamento-do-atuador-sobrevive-a-reinicio.md).
+
 ## [0.1.0] - 2026-10-28
 
 Primeira versão publicada: um protótipo **simulado**. Nenhum hardware foi construído ou avaliado.

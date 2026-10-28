@@ -15,6 +15,9 @@ O que existe, o que falta e, principalmente, **o que impede o uso com hardware r
 - [x] API de leitura com erros padronizados (RFC 9457)
 - [x] Painel responsivo (a partir de 320 px), nos temas claro e escuro, com a câmera simulada ao vivo
 - [x] Identidade visual e documentação técnica
+- [x] Orçamento do atuador que sobrevive a reinícios (simulado em arquivo; veja o [ADR 0007](decisoes/0007-orcamento-do-atuador-sobrevive-a-reinicio.md))
+- [x] Registro de mudanças, primeira versão marcada (`v0.1.0`) e política de segurança
+- [x] Dependabot e análise estática CodeQL no GitHub
 
 ## Antes de qualquer hardware real
 
@@ -23,7 +26,7 @@ Itens **bloqueantes**: sem eles, ligar o software a um dispositivo físico não 
 | Item | Por que bloqueia |
 |---|---|
 | **Proteção física (camada 7)**: relé normalmente aberto, watchdog em hardware e limitação de corrente | Software sozinho não garante que a saída desligue se o processador travar. |
-| **Orçamento do atuador em memória não volátil** | Hoje um reinício zera o orçamento da última hora e permitiria exceder o limite. |
+| **Orçamento do atuador em memória realmente não volátil, no hardware** | No simulador ele já sobrevive a reinício, gravado em arquivo. Falta validar no componente escolhido: memória inacessível fora do firmware e desgaste da flash. |
 | **Registrador de eventos independente do controlador** | Hoje, com o controlador parado, os eventos do atuador não chegam ao banco. |
 | **Avaliação de segurança elétrica** por profissional habilitado, conforme as normas aplicáveis | Nenhum projeto elétrico foi feito nem revisado. |
 | **Conformidade legal**: legislação ambiental e sanitária aplicável ao controle de aves | Não foi avaliada. |
@@ -48,12 +51,6 @@ Itens **bloqueantes**: sem eles, ligar o software a um dispositivo físico não 
 - [ ] Separar o motivo `disconnected` em duas situações: conexão que cai e comando recebido com o atuador desconectado
 - [ ] Política de retenção e eliminação de dados antigos
 - [ ] Pausar a consulta do painel com a aba escondida em todos os blocos (hoje só a câmera faz isso)
-
-### Projeto
-
-- [ ] Registro de mudanças (`CHANGELOG`) e primeira versão marcada
-- [ ] Política de segurança (`SECURITY.md`) e guia de contribuição
-- [ ] Automação de dependências e análise estática de segurança no GitHub
 
 ## Fora do escopo por enquanto
 

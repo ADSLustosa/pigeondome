@@ -34,7 +34,7 @@ Este é um projeto individual, então os prazos são metas de boa-fé, não gara
 
 ### Limitações já conhecidas (fora do escopo)
 
-Estão documentadas e planejadas no [roadmap](docs/roadmap.md), então relatá-las não é necessário: ausência de TLS no broker e de autenticação na API (hoje tudo escuta só em `127.0.0.1`), orçamento do atuador em memória volátil, eventos gravados apenas pelo controlador e proteção física inexistente.
+Estão documentadas e planejadas no [roadmap](docs/roadmap.md), então relatá-las não é necessário: ausência de TLS no broker e de autenticação na API (hoje tudo escuta só em `127.0.0.1`), orçamento do atuador gravado em arquivo comum (simula a memória não volátil), eventos gravados apenas pelo controlador e proteção física inexistente.
 
 ### Versões suportadas
 
@@ -64,7 +64,7 @@ This is a solo project, so these are good-faith targets, not contractual guarant
 
 In scope: bypassing the **kill switch**, the **actuator limits** or the decision **policy**; getting around per-role **broker permissions** or the command contract; API and dashboard flaws; secrets or personal data exposed in the repository.
 
-Out of scope, because they are already documented in the [roadmap](docs/roadmap.md): no TLS on the broker and no API authentication (everything listens on `127.0.0.1` only), the actuator budget living in volatile memory, events recorded only by the controller, and the absence of physical protection.
+Out of scope, because they are already documented in the [roadmap](docs/roadmap.md): no TLS on the broker and no API authentication (everything listens on `127.0.0.1` only), the actuator budget stored in a plain file (it simulates non-volatile memory), events recorded only by the controller, and the absence of physical protection.
 
 ### Supported versions
 

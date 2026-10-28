@@ -42,8 +42,24 @@ São constantes do atuador (`Limits`, em `actuator_core.py`), nunca parâmetros 
 | Tolerância de relógio | 5 s | Comando "do futuro" além disso é recusado. |
 | Relógio válido | a partir de 2026-01-01 | Relógio anterior a isso é falha no autoteste (`clock_invalid`). |
 | Memória de comandos | 256 | Comandos repetidos (`command_id`) são recusados (`duplicate`). |
+| Memória do orçamento | arquivo em `ACTUATOR_STATE_DIR` | O gasto da última hora sobrevive a reinício (veja abaixo). |
 
 O limite de pulso vale também no controlador: `PolicyConfig` recusa uma duração de mais de 10 s já na partida.
+
+## O orçamento atravessa reinícios
+
+Sem isto, reiniciar o atuador zeraria o limite de 120 s por hora. O gasto é guardado numa memória não volátil (no simulador, um arquivo; em hardware real, a flash ou a EEPROM) e recuperado ao ligar. A decisão está no [ADR 0007](decisoes/0007-orcamento-do-atuador-sobrevive-a-reinicio.md). Em resumo:
+
+| Situação | O que o atuador faz |
+|---|---|
+| Aceita um pulso | **Grava antes** de ligar a saída, com o fim previsto. |
+| Cai no meio de um pulso | Ao voltar, o pulso conta **inteiro**, e a pausa de 30 s também. |
+| Não consegue gravar ao aceitar um comando | Recusa o comando (`fault`) e entra em falha `self_test`. |
+| Arquivo corrompido, de outro dispositivo ou de versão desconhecida | Falha `self_test`, guarda o arquivo ruim à parte (`*.corrupt-*`) e presume a próxima hora como **toda gasta**. |
+| Relógio de parede voltou no tempo | Pulso gravado "no futuro" conta inteiro, como se tivesse terminado agora. |
+| Primeira execução (sem arquivo) | Começa com orçamento zero e confirma que consegue gravar. |
+
+No simulador não há botão de reset: **reiniciar o processo do atuador** faz o papel do reset local, depois de corrigir a causa (pasta sem permissão, disco cheio, arquivo ruim).
 
 ## Máquina de estados
 
@@ -72,7 +88,7 @@ Regras que valem em qualquer estado:
 - Sem conexão (`safe_off`), a saída está desligada, e um pulso em andamento é interrompido com o motivo `disconnected`.
 - **`stop` é sempre aceito**, sem validar validade, repetição nem formato, e interrompe um pulso em andamento.
 - Em manutenção ou falha, todo comando é recusado, e um pulso em andamento é interrompido.
-- Uma falha só sai com **reset local** (botão físico no hardware), e o primeiro código de falha é mantido.
+- Uma falha só sai com **reset local** (botão físico no hardware), e o primeiro código de falha é mantido. O autoteste que acompanha o reset inclui confirmar que a memória do orçamento grava.
 
 ## Ordem de validação de um `pulse`
 
@@ -93,6 +109,7 @@ Só então a saída liga, e o atuador emite `command_accepted` e `pulse_started`
 |---|---|
 | Regras do núcleo do atuador | Testes unitários determinísticos, com o tempo injetado (`simulator/tests/test_actuator_core.py`). |
 | Invariantes sob entradas aleatórias | Teste aleatório (fuzz) reprodutível por semente: 25 sementes de 250 passos, em dois perfis de limites. A cada passo valida estado e eventos contra os contratos e, no fim, reconstrói a linha do tempo da saída (`simulator/tests/test_actuator_fuzz.py`). |
+| Orçamento e reinícios | Memória do orçamento: arquivo ausente, vazio, truncado, de outro dispositivo, gravação que falha no meio. Um segundo teste aleatório sorteia quedas de energia no meio do pulso, memória ilegível e gravação com falha, e reconstrói a saída ao longo de todos os boots; ele **reprova** se um reinício esquecer o orçamento (`simulator/tests/test_actuator_budget.py` e `test_actuator_restart_fuzz.py`). |
 | Contratos | Os mesmos JSON Schemas validam produtores e consumidores. |
 | Permissões do broker | Testes leem o arquivo de ACL e conferem que cada papel só tem o que precisa (`backend/tests/test_mosquitto_acl.py`). |
 | Chave geral e falha do banco | Testes do controlador e da API conferem que a chave ligada impede o envio e que sem banco não há decisão. |
@@ -101,7 +118,7 @@ Só então a saída liga, e o atuador emite `command_accepted` e `pulse_started`
 
 Esta seção existe para que ninguém confie no que o sistema ainda não garante:
 
-- **O orçamento do atuador vive em memória.** Se o atuador reiniciar, o orçamento da última hora volta a zero. Em hardware real precisa ser guardado em memória não volátil.
+- **A memória do orçamento é um arquivo comum.** Ela simula a memória não volátil, mas quem tem acesso à pasta de estado pode apagar o arquivo e zerar o orçamento (arquivo ausente vale como primeira execução). Em hardware real, a memória precisa ser inacessível fora do firmware, e o desgaste da flash precisa ser validado no componente escolhido.
 - **Os eventos são gravados pelo controlador.** Se o controlador estiver parado, os eventos do atuador não chegam ao banco. Falta um registrador independente.
 - **O motivo `disconnected` mistura duas situações:** a conexão que cai e o comando que chega com o atuador desconectado.
 - **O broker não usa TLS** e a API não tem autenticação. Hoje tudo escuta só em `127.0.0.1`; qualquer exposição na rede exige as duas coisas antes.

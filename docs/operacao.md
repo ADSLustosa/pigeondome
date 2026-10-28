@@ -41,11 +41,14 @@ Um terminal para cada serviço, com o `.venv` ativo, na raiz do repositório. Co
 | Ingestor | `.\scripts\run-backend.ps1` | Recebe as detecções e grava no banco. |
 | Câmera simulada | `.\scripts\run-simulator.ps1 -Hour 8 -IntervalSeconds 2` | `-Hour` força a hora usada pelo modelo de presença. |
 | API | `.\scripts\run-api.ps1` | `-Port 8001` muda a porta. |
-| Atuador simulado | `.\scripts\run-actuator.ps1` | Com os limites de segurança. |
+| Atuador simulado | `.\scripts\run-actuator.ps1` | Com os limites de segurança. Grava o orçamento em `.pigeondome-state\actuator-<id>.json` (`ACTUATOR_STATE_DIR` muda a pasta). |
 | Controlador | `.\scripts\run-controller.ps1` | Modo seco. `-Mode live` envia pulsos ao atuador simulado. |
 | Painel | `cd dashboard` e `npm run dev` | Em `http://127.0.0.1:5173`. |
 
 Sem atuador e controlador, o painel mostra presença e câmera, mas não a trilha de atuação.
+
+> [!IMPORTANT]
+> **Não apague a pasta `.pigeondome-state`.** O arquivo dentro dela é o que impede um reinício do atuador de zerar o orçamento da última hora. Sem o arquivo, o atuador entende que é a primeira execução. Veja [Segurança do atuador](seguranca-do-atuador.md#o-orçamento-atravessa-reinícios).
 
 ### Portas
 
@@ -130,6 +133,7 @@ A integração com o banco usa a variável `PIGEONDOME_TEST_DSN`; sem ela, esses
 | A API não sobe na porta 8000 | Outro programa ocupa a porta | Veja abaixo |
 | Atuador aparece "sem sinal" | Sem mensagem de estado há mais de 30 s | Conferir se o atuador e o broker estão rodando |
 | Controlador aparece parado | Sem batimento há mais de 15 s | Reiniciar `run-controller.ps1` |
+| Atuador em falha `self_test` ao ligar | A memória do orçamento não grava (pasta sem permissão, disco cheio) ou o arquivo estava corrompido | Veja o log do atuador. Um arquivo ruim é guardado como `*.corrupt-*` na mesma pasta. Corrija a causa e **reinicie o atuador** (no simulador, isso faz o papel do reset local). Se o arquivo estava corrompido, a hora seguinte conta como orçamento esgotado. |
 
 ### Caso: a porta 8000 já está em uso
 
