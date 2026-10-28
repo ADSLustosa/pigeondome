@@ -7,6 +7,7 @@ laço de `tick`. Roda como o papel MQTT 'actuator':  python -m pigeondome_sim.ac
 import contextlib
 import logging
 import os
+import re
 import signal
 import sys
 import threading
@@ -14,15 +15,20 @@ import time
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
+from pathlib import Path
 from typing import Any
 
 import paho.mqtt.client as mqtt
 from paho.mqtt.enums import CallbackAPIVersion
 
-from pigeondome_sim.actuator_core import Instant
+from pigeondome_sim.actuator_budget import FileBudgetStore
+from pigeondome_sim.actuator_core import ActuatorCore, Instant
 from pigeondome_sim.actuator_service import ActuatorService, Publication, command_topic
 
 log = logging.getLogger("pigeondome_sim.actuator")
+
+DEVICE_ID_PATTERN = re.compile(r"^[a-z0-9-]{3,32}$")  # o mesmo do contrato; vira nome de arquivo
+DEFAULT_STATE_DIR = ".pigeondome-state"
 
 
 @dataclass(frozen=True)
@@ -34,6 +40,8 @@ class ActuatorSettings:
     device_id: str
     tick_s: float
     heartbeat_s: float
+    # Pasta da memória não volátil do orçamento. None: sem memória (o orçamento vive em RAM).
+    state_dir: str | None = None
 
     @classmethod
     def from_env(cls) -> "ActuatorSettings":
@@ -48,14 +56,21 @@ class ActuatorSettings:
             )
         if heartbeat_s <= 0:
             raise ValueError("ACTUATOR_HEARTBEAT_S precisa ser positivo")
+        device_id = os.environ.get("ACTUATOR_DEVICE_ID", "act-sim-01")
+        if not DEVICE_ID_PATTERN.fullmatch(device_id):
+            raise ValueError("ACTUATOR_DEVICE_ID precisa seguir ^[a-z0-9-]{3,32}$")
+        state_dir = os.environ.get("ACTUATOR_STATE_DIR", DEFAULT_STATE_DIR).strip()
+        if not state_dir:
+            raise ValueError("ACTUATOR_STATE_DIR não pode ser vazio")
         return cls(
             host=os.environ.get("MQTT_HOST", "127.0.0.1"),
             port=int(os.environ.get("MQTT_PORT", "1883")),
             user=os.environ.get("MQTT_USER", "actuator"),
             password=password,
-            device_id=os.environ.get("ACTUATOR_DEVICE_ID", "act-sim-01"),
+            device_id=device_id,
             tick_s=tick_s,
             heartbeat_s=heartbeat_s,
+            state_dir=state_dir,
         )
 
 
@@ -74,12 +89,22 @@ class ActuatorRunner:
     ) -> None:
         self._settings = settings
         self._clock = clock
-        self._service = service if service is not None else ActuatorService(settings.device_id)
+        self._service = service if service is not None else self._new_service(settings)
+        # Antes de conectar (e de montar a última vontade): recupera o orçamento gravado.
+        self._service.restore_budget(self._clock())
         # Os callbacks do paho rodam em outra thread; o lock também mantém a ORDEM das
         # publicações (o estado retido nunca pode chegar ao broker fora de ordem).
         self._lock = threading.Lock()
         self._client: Any = client if client is not None else self._new_client()
         self._configure()
+
+    @staticmethod
+    def _new_service(settings: ActuatorSettings) -> ActuatorService:
+        store = None
+        if settings.state_dir is not None:
+            path = Path(settings.state_dir) / f"actuator-{settings.device_id}.json"
+            store = FileBudgetStore(path, settings.device_id)
+        return ActuatorService(settings.device_id, ActuatorCore(store=store))
 
     def _new_client(self) -> mqtt.Client:
         # Sessão limpa: o broker não guarda comandos para um atuador desligado.

@@ -8,5 +8,6 @@ $root = Split-Path $PSScriptRoot -Parent
 . "$PSScriptRoot\mqtt-env.ps1"
 $py = Get-ProjectPython $root
 
-$extra = @{ ACTUATOR_DEVICE_ID = $DeviceId }
+# A memória do orçamento fica na raiz do repositório, qualquer que seja a pasta de onde se roda.
+$extra = @{ ACTUATOR_DEVICE_ID = $DeviceId; ACTUATOR_STATE_DIR = (Join-Path $root '.pigeondome-state') }
 Invoke-WithMqttRole -Role actuator -Root $root -ExtraEnv $extra -Command { & $py -m pigeondome_sim.actuator_runner }.GetNewClosure()

@@ -149,6 +149,10 @@ class ActuatorService:
         self._pending: list[Event] = []  # eventos ocorridos offline, publicados ao reconectar
         self._last_key: tuple[object, ...] | None = None
 
+    def restore_budget(self, now: Instant) -> None:
+        """Recupera o orçamento gravado. Chame uma vez, ao ligar, antes de conectar ao broker."""
+        self._core.restore_budget(now)
+
     def will(self, now: Instant) -> Publication:
         """Última vontade (LWT): o broker publica isto se a conexão cair sem despedida."""
         offline = Snapshot(

@@ -13,6 +13,8 @@ Câmera e atuador **simulados** em Python. Existem para exercitar o sistema inte
 
 O núcleo do atuador (`actuator_core.py`) é uma máquina de estados pura, sem relógio nem entrada e saída: o tempo entra como parâmetro. É ele que carrega os limites de segurança. Veja [Segurança do atuador](../docs/seguranca-do-atuador.md).
 
+O orçamento de pulsos é guardado por uma porta (`actuator_budget.py`): um arquivo JSON em `ACTUATOR_STATE_DIR` (padrão `.pigeondome-state/`), para que um reinício não zere o limite. Não apague essa pasta.
+
 Para executar, use `scripts\run-simulator.ps1` e `scripts\run-actuator.ps1`. Veja [Operação](../docs/operacao.md).
 
 ## Testes

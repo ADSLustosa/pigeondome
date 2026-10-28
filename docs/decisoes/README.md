@@ -10,6 +10,7 @@ Registros curtos (ADR) das escolhas que mais pesam no projeto: o contexto, o que
 | 0004 | [A hora de recepção define o que é dado velho](0004-hora-de-recepcao-define-dado-velho.md) |
 | 0005 | [Modo seco por padrão e regras em ordem fixa](0005-modo-seco-por-padrao.md) |
 | 0006 | [Permissões do broker por papel](0006-permissoes-do-broker-por-papel.md) |
+| 0007 | [O orçamento do atuador sobrevive a reinícios](0007-orcamento-do-atuador-sobrevive-a-reinicio.md) |
 
 ## Como acrescentar uma decisão
 

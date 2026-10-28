@@ -3,6 +3,7 @@
 import json
 import threading
 from datetime import UTC, datetime, timedelta
+from pathlib import Path
 from types import SimpleNamespace
 from typing import Any
 
@@ -26,6 +27,7 @@ ENV_NAMES = [
     "ACTUATOR_DEVICE_ID",
     "ACTUATOR_TICK_S",
     "ACTUATOR_HEARTBEAT_S",
+    "ACTUATOR_STATE_DIR",
 ]
 OK = SimpleNamespace(is_failure=False)
 REFUSED = SimpleNamespace(is_failure=True)
@@ -161,7 +163,34 @@ def test_settings_from_env_use_safe_defaults(monkeypatch: pytest.MonkeyPatch) ->
     loaded = ActuatorSettings.from_env()
     assert (loaded.host, loaded.port, loaded.user) == ("127.0.0.1", 1883, "actuator")
     assert (loaded.device_id, loaded.tick_s, loaded.heartbeat_s) == (DEVICE, 0.5, 10.0)
+    assert loaded.state_dir == ".pigeondome-state"
     assert CREDENTIAL not in repr(loaded)
+
+
+def test_settings_accept_another_state_folder(monkeypatch: pytest.MonkeyPatch) -> None:
+    clear_env(monkeypatch)
+    monkeypatch.setenv("MQTT_PASSWORD", CREDENTIAL)
+    monkeypatch.setenv("ACTUATOR_STATE_DIR", "/var/lib/pigeondome")
+    assert ActuatorSettings.from_env().state_dir == "/var/lib/pigeondome"
+
+
+@pytest.mark.parametrize("name", ["../fora", "a", "MAIÚSCULA", "com espaço", "x" * 33, "a/b"])
+def test_settings_reject_a_device_id_that_would_become_a_bad_file_name(
+    monkeypatch: pytest.MonkeyPatch, name: str
+) -> None:
+    clear_env(monkeypatch)
+    monkeypatch.setenv("MQTT_PASSWORD", CREDENTIAL)
+    monkeypatch.setenv("ACTUATOR_DEVICE_ID", name)
+    with pytest.raises(ValueError, match="ACTUATOR_DEVICE_ID"):
+        ActuatorSettings.from_env()
+
+
+def test_settings_reject_an_empty_state_folder(monkeypatch: pytest.MonkeyPatch) -> None:
+    clear_env(monkeypatch)
+    monkeypatch.setenv("MQTT_PASSWORD", CREDENTIAL)
+    monkeypatch.setenv("ACTUATOR_STATE_DIR", "  ")
+    with pytest.raises(ValueError, match="ACTUATOR_STATE_DIR"):
+        ActuatorSettings.from_env()
 
 
 def test_settings_require_the_password(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -257,6 +286,49 @@ def test_disconnection_cuts_the_pulse_and_the_event_is_published_after_reconnect
     events = decoded(client, events_topic(DEVICE))
     assert [(e["event"], e["reason_code"]) for e in events] == [("pulse_aborted", "disconnected")]
     client.on_disconnect(client, None, None, OK, None)  # desconexão limpa
+
+
+# --- memória do orçamento: o atuador reinicia ---------------------------------------------
+
+
+class RebootedClock(Clock):
+    """Outro boot: o relógio monotônico recomeça de outro ponto; o de parede segue."""
+
+    def __call__(self) -> Instant:
+        instant = super().__call__()
+        return Instant(instant.mono_s - 900.0, instant.wall)
+
+
+def test_a_restarted_runner_remembers_what_the_previous_one_spent(tmp_path: Path) -> None:
+    _, first_client, _ = make_runner(state_dir=str(tmp_path))
+    connect(first_client)
+    deliver(first_client, pulse_payload(seconds=10))
+    assert (tmp_path / f"actuator-{DEVICE}.json").exists()
+
+    client = FakeClient()
+    second_clock = RebootedClock()
+    second_clock.seconds = 3  # o atuador caiu aos 2 s de pulso e voltou 1 s depois
+    ActuatorRunner(settings(state_dir=str(tmp_path)), client=client, clock=second_clock)
+    client.on_connect(client, None, {}, OK, None)
+    state = decoded(client, state_topic(DEVICE))[-1]
+    assert state["budget_used_s_1h"] == 10  # os 10 s previstos, não os 2 s que ele ligou
+    assert state["state"] == "cooldown"
+
+
+def test_a_corrupt_memory_file_is_reported_as_a_self_test_fault(tmp_path: Path) -> None:
+    (tmp_path / f"actuator-{DEVICE}.json").write_text("{isto nao e json", encoding="utf-8")
+    _, client, _ = make_runner(state_dir=str(tmp_path))
+    client.on_connect(client, None, {}, OK, None)
+    state = decoded(client, state_topic(DEVICE))[-1]
+    assert (state["state"], state["fault"]) == ("fault", "self_test")
+    assert list(tmp_path.glob("*.corrupt-*"))  # guardado à parte para análise
+
+
+def test_without_a_state_folder_nothing_is_written(tmp_path: Path) -> None:
+    _, client, _ = make_runner()  # state_dir=None: tudo em RAM, como antes
+    connect(client)
+    deliver(client, pulse_payload())
+    assert list(tmp_path.iterdir()) == []
 
 
 # --- laço principal e encerramento ----------------------------------------------------------
