@@ -14,7 +14,7 @@ Scripts PowerShell para executar e operar o ambiente local. Rode todos a partir 
 | `show-decisions.ps1` | A trilha do controlador, lida do banco |
 | `smoke-api.ps1` | Teste de fumaça da API |
 | `apply-acl.ps1` | Reaplica a ACL do broker |
-| `capture-screenshots.ps1` | Capturas do painel para o README |
+| `capture-screenshots.ps1` | Capturas do painel para o README (chama o `capture-screenshots.mjs`, que precisa do Node) |
 | `build-brand-assets.py` | Banners e imagem social, gerados dos logos oficiais |
 | `mqtt-env.ps1` | Auxiliar: roda um comando com as credenciais MQTT de um papel |
 

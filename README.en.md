@@ -102,6 +102,39 @@ The software that decides and the software that activates never trust each other
 
 ## Dashboard
 
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/screenshots/painel-escuro.png">
+    <img alt="Pigeondome dashboard: controller, actuator and kill switch state, live simulated camera, last-hour summary and pigeon presence chart" src="assets/screenshots/painel-claro.png" width="880">
+  </picture>
+</p>
+
+<p align="center"><sub>Simulated data. The captures contain no real imagery or personal data.</sub></p>
+
+<details>
+<summary><b>Full dashboard: decision trail and actuator events</b></summary>
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/screenshots/painel-completo-escuro.png">
+    <img alt="Full Pigeondome dashboard, including the controller decision trail and the actuator events" src="assets/screenshots/painel-completo-claro.png" width="880">
+  </picture>
+</p>
+
+</details>
+
+<details>
+<summary><b>Mobile view</b></summary>
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/screenshots/painel-movel-escuro.png">
+    <img alt="Pigeondome dashboard on a phone screen, with the blocks stacked in one column" src="assets/screenshots/painel-movel-claro.png" width="300">
+  </picture>
+</p>
+
+</details>
+
 Stale data never looks current: an offline actuator is shown as offline, one without recent messages as "no signal", and a controller without a heartbeat as "stopped". If the API itself goes down, the cards fade and warn that they show the last received state.
 
 ## Running locally

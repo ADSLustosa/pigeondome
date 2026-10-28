@@ -102,6 +102,39 @@ O software que decide e o software que aciona nunca confiam um no outro: cada ca
 
 ## Painel
 
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/screenshots/painel-escuro.png">
+    <img alt="Painel do Pigeondome: estado do controlador, do atuador e da chave geral, câmera simulada ao vivo, resumo da última hora e gráfico de presença de pombos" src="assets/screenshots/painel-claro.png" width="880">
+  </picture>
+</p>
+
+<p align="center"><sub>Dados simulados. As capturas não contêm imagem real nem dado pessoal.</sub></p>
+
+<details>
+<summary><b>Painel completo: trilha de decisões e eventos do atuador</b></summary>
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/screenshots/painel-completo-escuro.png">
+    <img alt="Painel completo do Pigeondome, incluindo a trilha de decisões do controlador e os eventos do atuador" src="assets/screenshots/painel-completo-claro.png" width="880">
+  </picture>
+</p>
+
+</details>
+
+<details>
+<summary><b>Versão para celular</b></summary>
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/screenshots/painel-movel-escuro.png">
+    <img alt="Painel do Pigeondome em tela de celular, com os blocos empilhados em uma coluna" src="assets/screenshots/painel-movel-claro.png" width="300">
+  </picture>
+</p>
+
+</details>
+
 Dado velho nunca parece atual: um atuador offline é mostrado como offline, um sem mensagens recentes como "sem sinal", e um controlador sem batimento como "parado". Se a própria API cair, os cartões esmaecem e avisam que mostram o último estado recebido.
 
 ## Executar localmente
