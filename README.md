@@ -161,6 +161,7 @@ pigeondome/
 ├── dashboard/   painel React
 ├── contracts/   contratos JSON Schema das mensagens MQTT
 ├── infra/       Docker Compose (PostgreSQL, Mosquitto) e ACL
+├── docs/        documentação técnica, decisões e guia de marca
 ├── scripts/     execução local (PowerShell)
 └── assets/      identidade visual e imagens deste README
 ```
@@ -170,7 +171,7 @@ pigeondome/
 - **Arquitetura hexagonal.** O domínio (política, registros, frescor dos dados) é puro: sem banco, sem rede e sem relógio. MQTT, PostgreSQL e HTTP são adaptadores.
 - **Contratos versionados.** As mensagens têm JSON Schema, e testes conferem produtores e consumidores contra eles.
 - **Testes de contrato em dois adaptadores.** Os mesmos testes rodam contra a versão em memória e contra o PostgreSQL.
-- **Teste de propriedades.** O núcleo do atuador é testado com entradas aleatórias para provar que os limites nunca são ultrapassados.
+- **Teste aleatório reprodutível.** O núcleo do atuador é exercitado com milhares de entradas aleatórias, geradas por semente, e a cada passo as invariantes de segurança são conferidas.
 - **Verificações obrigatórias.** Três verificações de CI (backend, simulador e painel) protegem a `main`; lint, tipos estritos e busca de segredos rodam antes de cada commit.
 - **Erros padronizados.** A API responde erros em `application/problem+json` (RFC 9457) e nunca devolve detalhes internos.
 
@@ -182,12 +183,12 @@ O banco guarda identificadores de dispositivos, contagens, decisões e motivos: 
 
 - [x] Contratos MQTT versionados e ingestão idempotente
 - [x] Política de decisão com modos seco, real e experimento
-- [x] Atuador simulado com limites de segurança e testes de propriedades
+- [x] Atuador simulado com limites de segurança e teste aleatório reprodutível
 - [x] Controlador com trilha de auditoria
 - [x] API de leitura e painel responsivo com câmera simulada ao vivo
 - [ ] Relatório do experimento A/B (tratamento contra controle)
 - [ ] Endurecimento: orçamento do atuador em memória não volátil, eventos gravados por processo independente, TLS no broker e autenticação da API
-- [ ] Documentação técnica em `docs/`
+- [x] Documentação técnica em [`docs/`](docs/README.md)
 - [ ] Hardware: lista de materiais, projeto elétrico e avaliação normativa
 - [ ] Detector real de pombos no dispositivo de borda
 

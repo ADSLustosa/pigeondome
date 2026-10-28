@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Estado do atuador (v1)",
-  "description": "Publicado pelo atuador em pigeondome/v1/{device_id}/state (QoS 1, retain). A última vontade (LWT) usa online=false, state=safe_off e output_on=false, com reported_at no instante da conexão.",
+  "description": "Publicado pelo atuador em pigeondome/v1/{device_id}/actuator/state (QoS 1, retain). A última vontade (LWT) usa online=false, state=safe_off e output_on=false, com reported_at no instante da conexão.",
   "type": "object",
   "additionalProperties": false,
   "required": [

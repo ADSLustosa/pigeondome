@@ -161,6 +161,7 @@ pigeondome/
 ├── dashboard/   React dashboard
 ├── contracts/   JSON Schema contracts for the MQTT messages
 ├── infra/       Docker Compose (PostgreSQL, Mosquitto) and ACL
+├── docs/        technical documentation (Portuguese), decisions and brand guide
 ├── scripts/     local execution (PowerShell)
 └── assets/      visual identity and images used by this README
 ```
@@ -170,7 +171,7 @@ pigeondome/
 - **Hexagonal architecture.** The domain (policy, records, data freshness) is pure: no database, no network and no clock. MQTT, PostgreSQL and HTTP are adapters.
 - **Versioned contracts.** Messages have JSON Schemas, and tests check producers and consumers against them.
 - **Contract tests on two adapters.** The same tests run against the in-memory version and against PostgreSQL.
-- **Property-based testing.** The actuator core is tested with random inputs to prove its limits are never exceeded.
+- **Reproducible randomized testing.** The actuator core is exercised with thousands of seeded random inputs, and the safety invariants are checked at every step.
 - **Required checks.** Three CI checks (backend, simulator and dashboard) protect `main`; lint, strict types and secret scanning run before every commit.
 - **Standard errors.** The API answers errors as `application/problem+json` (RFC 9457) and never returns internal details.
 
@@ -182,12 +183,12 @@ The database stores device identifiers, counts, decisions and reasons: no person
 
 - [x] Versioned MQTT contracts and idempotent ingestion
 - [x] Decision policy with dry-run, live and experiment modes
-- [x] Simulated actuator with safety limits and property-based tests
+- [x] Simulated actuator with safety limits and reproducible randomized tests
 - [x] Controller with an audit trail
 - [x] Read API and responsive dashboard with a simulated live camera
 - [ ] A/B experiment report (treatment versus control)
 - [ ] Hardening: actuator budget in non-volatile memory, events recorded by an independent process, broker TLS and API authentication
-- [ ] Technical documentation in `docs/`
+- [x] Technical documentation in [`docs/`](docs/README.md) (in Portuguese)
 - [ ] Hardware: bill of materials, electrical design and standards assessment
 - [ ] Real on-device pigeon detector
 
