@@ -98,7 +98,7 @@ export function EventLog() {
                         <Chip tone={info.tone}>{info.label}</Chip>
                       </td>
                       <td role="cell" data-label={COLUMN.reason} className="act-wrap">
-                        {event.reason_code === null ? '—' : reasonCodeText(event.reason_code)}
+                        {event.reason_code === null ? '—' : reasonCodeText(event.reason_code, event.event)}
                       </td>
                       <td role="cell" data-label={COLUMN.command}>
                         {event.command_id === null ? (

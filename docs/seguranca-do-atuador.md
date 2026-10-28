@@ -101,7 +101,7 @@ De **qualquer** estado, perder a conexão leva a `safe_off` (por isso a seta nã
 Regras que valem em qualquer estado:
 
 - A saída (`output_on`) só pode ser verdadeira em `pulsing`. O contrato de estado proíbe qualquer outra combinação, e os testes conferem isso.
-- Sem conexão (`safe_off`), a saída está desligada, e um pulso em andamento é interrompido com o motivo `disconnected`.
+- Sem conexão (`safe_off`), a saída está desligada, e um pulso em andamento é interrompido com o motivo `disconnected`. O mesmo motivo também recusa um comando que chegue com o atuador desconectado (na prática só em teste, porque os callbacks da rede são serializados); o par evento + motivo (`pulse_aborted` ou `command_rejected`) diz qual dos dois ocorreu, e o painel mostra o texto certo para cada um.
 - **`stop` é sempre aceito**, sem validar validade, repetição nem formato, e interrompe um pulso em andamento.
 - Em manutenção ou falha, todo comando é recusado, e um pulso em andamento é interrompido.
 - Uma falha só sai com **reset local** (botão físico no hardware), e o primeiro código de falha é mantido. O autoteste que acompanha o reset inclui confirmar que a memória do orçamento grava.
@@ -137,7 +137,6 @@ Esta seção existe para que ninguém confie no que o sistema ainda não garante
 
 - **A memória do orçamento é um arquivo comum.** Ela simula a memória não volátil, mas quem tem acesso à pasta de estado pode apagar o arquivo e zerar o orçamento (arquivo ausente vale como primeira execução). Em hardware real, a memória precisa ser inacessível fora do firmware, e o desgaste da flash precisa ser validado no componente escolhido.
 - **O registro de eventos do atuador é um arquivo comum.** Ele guarda a trilha mesmo sem rede, mas quem acessa a pasta de estado pode apagá-lo ou editá-lo, então não vale como prova. Em hardware real, precisa ficar em memória inacessível fora do firmware e, idealmente, encadeado por hash. Também não há limite de taxa: uma enxurrada de comandos recusados é gravada e pode empurrar eventos antigos para fora da rotação.
-- **O motivo `disconnected` mistura duas situações:** a conexão que cai e o comando que chega com o atuador desconectado.
 - **O broker não usa TLS** e a API não tem autenticação. Hoje tudo escuta só em `127.0.0.1`; qualquer exposição na rede exige as duas coisas antes.
 - **A proteção física (camada 7) não existe.** Nenhum relé, watchdog em hardware ou limitador de corrente foi projetado.
 - **Não houve avaliação de segurança elétrica** por profissional habilitado, nem de conformidade com a legislação ambiental e sanitária aplicável.
