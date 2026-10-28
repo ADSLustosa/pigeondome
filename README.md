@@ -221,7 +221,8 @@ O banco guarda identificadores de dispositivos, contagens, decisões e motivos: 
 - [x] API de leitura e painel responsivo com câmera simulada ao vivo
 - [ ] Relatório do experimento A/B (tratamento contra controle)
 - [x] Orçamento do atuador que sobrevive a reinícios (simulado em arquivo)
-- [ ] Endurecimento: eventos gravados por processo independente, TLS no broker e autenticação da API
+- [x] Registro de eventos no próprio atuador (simulado em arquivo)
+- [ ] Endurecimento: TLS no broker e autenticação da API
 - [x] Documentação técnica em [`docs/`](docs/README.md)
 - [ ] Hardware: lista de materiais, projeto elétrico e avaliação normativa
 - [ ] Detector real de pombos no dispositivo de borda

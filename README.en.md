@@ -221,7 +221,8 @@ The database stores device identifiers, counts, decisions and reasons: no person
 - [x] Read API and responsive dashboard with a simulated live camera
 - [ ] A/B experiment report (treatment versus control)
 - [x] Actuator budget that survives restarts (simulated with a file)
-- [ ] Hardening: events recorded by an independent process, broker TLS and API authentication
+- [x] Event journal kept by the actuator itself (simulated in a file)
+- [ ] Hardening: broker TLS and API authentication
 - [x] Technical documentation in [`docs/`](docs/README.md) (in Portuguese)
 - [ ] Hardware: bill of materials, electrical design and standards assessment
 - [ ] Real on-device pigeon detector

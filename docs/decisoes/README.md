@@ -11,6 +11,7 @@ Registros curtos (ADR) das escolhas que mais pesam no projeto: o contexto, o que
 | 0005 | [Modo seco por padrão e regras em ordem fixa](0005-modo-seco-por-padrao.md) |
 | 0006 | [Permissões do broker por papel](0006-permissoes-do-broker-por-papel.md) |
 | 0007 | [O orçamento do atuador sobrevive a reinícios](0007-orcamento-do-atuador-sobrevive-a-reinicio.md) |
+| 0008 | [O atuador mantém o seu próprio registro de eventos](0008-registro-de-eventos-no-proprio-atuador.md) |
 
 ## Como acrescentar uma decisão
 

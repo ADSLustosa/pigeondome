@@ -43,6 +43,7 @@ São constantes do atuador (`Limits`, em `actuator_core.py`), nunca parâmetros 
 | Relógio válido | a partir de 2026-01-01 | Relógio anterior a isso é falha no autoteste (`clock_invalid`). |
 | Memória de comandos | 256 | Comandos repetidos (`command_id`) são recusados (`duplicate`). |
 | Memória do orçamento | arquivo em `ACTUATOR_STATE_DIR` | O gasto da última hora sobrevive a reinício (veja abaixo). |
+| Registro de eventos | arquivo em `ACTUATOR_STATE_DIR`, 1 MiB × 5 | Cada evento é gravado no próprio atuador, antes de ligar a saída (veja abaixo). |
 
 O limite de pulso vale também no controlador: `PolicyConfig` recusa uma duração de mais de 10 s já na partida.
 
@@ -60,6 +61,20 @@ Sem isto, reiniciar o atuador zeraria o limite de 120 s por hora. O gasto é gua
 | Primeira execução (sem arquivo) | Começa com orçamento zero e confirma que consegue gravar. |
 
 No simulador não há botão de reset: **reiniciar o processo do atuador** faz o papel do reset local, depois de corrigir a causa (pasta sem permissão, disco cheio, arquivo ruim).
+
+## O atuador guarda a sua própria trilha
+
+Os eventos saem por MQTT e o controlador os grava no banco, mas isso depende de rede, broker e controlador. Por isso o atuador também grava cada evento no **próprio registro**, um arquivo JSON Lines em que cada linha segue o contrato `actuator-event.v1`. A decisão está no [ADR 0008](decisoes/0008-registro-de-eventos-no-proprio-atuador.md).
+
+| Situação | O que o atuador faz |
+|---|---|
+| Aceita um pulso | **Grava antes** de ligar a saída. |
+| Evento com o broker fora do ar | Grava na hora; o MQTT recebe depois, ao reconectar. |
+| Não consegue gravar | Falha `self_test`. Se era um comando, ele é recusado (`fault`) e a saída não liga. **Desligar nunca depende do registro.** |
+| Cai no meio de um pulso | O registro termina em `pulse_started` sem desfecho, a marca da queda. |
+| Cai no meio de uma gravação | Sobra uma linha cortada, que é isolada no boot seguinte e contada na leitura. |
+
+Para ler: `.\scripts\show-actuator-journal.ps1`. Ele destaca pulso sem desfecho (normal enquanto o pulso está em curso; depois que acaba, indica queda) e linhas danificadas.
 
 ## Máquina de estados
 
@@ -110,6 +125,7 @@ Só então a saída liga, e o atuador emite `command_accepted` e `pulse_started`
 | Regras do núcleo do atuador | Testes unitários determinísticos, com o tempo injetado (`simulator/tests/test_actuator_core.py`). |
 | Invariantes sob entradas aleatórias | Teste aleatório (fuzz) reprodutível por semente: 25 sementes de 250 passos, em dois perfis de limites. A cada passo valida estado e eventos contra os contratos e, no fim, reconstrói a linha do tempo da saída (`simulator/tests/test_actuator_fuzz.py`). |
 | Orçamento e reinícios | Memória do orçamento: arquivo ausente, vazio, truncado, de outro dispositivo, gravação que falha no meio. Um segundo teste aleatório sorteia quedas de energia no meio do pulso, memória ilegível e gravação com falha, e reconstrói a saída ao longo de todos os boots; ele **reprova** se um reinício esquecer o orçamento (`simulator/tests/test_actuator_budget.py` e `test_actuator_restart_fuzz.py`). |
+| Registro de eventos | Arquivo: formato do contrato, rotação, linha cortada por queda, falha de gravação. Núcleo: grava **antes** de ligar a saída, recusa o pulso e entra em falha se não grava, e desliga mesmo com o registro quebrado. Teste aleatório com quedas e falhas sorteadas: o registro tem exatamente os eventos do núcleo, na ordem, e a saída nunca liga sem o início do pulso gravado (`simulator/tests/test_actuator_journal.py` e `test_actuator_restart_fuzz.py`). |
 | Contratos | Os mesmos JSON Schemas validam produtores e consumidores. |
 | Permissões do broker | Testes leem o arquivo de ACL e conferem que cada papel só tem o que precisa (`backend/tests/test_mosquitto_acl.py`). |
 | Chave geral e falha do banco | Testes do controlador e da API conferem que a chave ligada impede o envio e que sem banco não há decisão. |
@@ -119,7 +135,7 @@ Só então a saída liga, e o atuador emite `command_accepted` e `pulse_started`
 Esta seção existe para que ninguém confie no que o sistema ainda não garante:
 
 - **A memória do orçamento é um arquivo comum.** Ela simula a memória não volátil, mas quem tem acesso à pasta de estado pode apagar o arquivo e zerar o orçamento (arquivo ausente vale como primeira execução). Em hardware real, a memória precisa ser inacessível fora do firmware, e o desgaste da flash precisa ser validado no componente escolhido.
-- **Os eventos são gravados pelo controlador.** Se o controlador estiver parado, os eventos do atuador não chegam ao banco. Falta um registrador independente.
+- **O registro de eventos do atuador é um arquivo comum.** Ele guarda a trilha mesmo sem rede, mas quem acessa a pasta de estado pode apagá-lo ou editá-lo, então não vale como prova. Em hardware real, precisa ficar em memória inacessível fora do firmware e, idealmente, encadeado por hash. Também não há limite de taxa: uma enxurrada de comandos recusados é gravada e pode empurrar eventos antigos para fora da rotação.
 - **O motivo `disconnected` mistura duas situações:** a conexão que cai e o comando que chega com o atuador desconectado.
 - **O broker não usa TLS** e a API não tem autenticação. Hoje tudo escuta só em `127.0.0.1`; qualquer exposição na rede exige as duas coisas antes.
 - **A proteção física (camada 7) não existe.** Nenhum relé, watchdog em hardware ou limitador de corrente foi projetado.

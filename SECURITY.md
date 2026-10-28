@@ -34,7 +34,7 @@ Este é um projeto individual, então os prazos são metas de boa-fé, não gara
 
 ### Limitações já conhecidas (fora do escopo)
 
-Estão documentadas e planejadas no [roadmap](docs/roadmap.md), então relatá-las não é necessário: ausência de TLS no broker e de autenticação na API (hoje tudo escuta só em `127.0.0.1`), orçamento do atuador gravado em arquivo comum (simula a memória não volátil), eventos gravados apenas pelo controlador e proteção física inexistente.
+Estão documentadas e planejadas no [roadmap](docs/roadmap.md), então relatá-las não é necessário: ausência de TLS no broker e de autenticação na API (hoje tudo escuta só em `127.0.0.1`), orçamento do atuador gravado em arquivo comum (simula a memória não volátil), registro de eventos do atuador em arquivo comum (sem proteção contra alteração) e proteção física inexistente.
 
 ### Versões suportadas
 

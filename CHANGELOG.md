@@ -6,6 +6,7 @@ Segue o formato [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e [V
 
 ### Segurança
 
+- O atuador agora **guarda a sua própria trilha de eventos**, independente de rede, broker e controlador. Cada evento é gravado em disco (JSON Lines, no formato do contrato) antes de ligar a saída; se não for possível gravar, o atuador entra em falha `self_test` e não opera, mas continua podendo desligar. Rotação por tamanho (5 × 1 MiB). Novo script `show-actuator-journal.ps1` e [ADR 0008](docs/decisoes/0008-registro-de-eventos-no-proprio-atuador.md).
 - O orçamento do atuador (120 s de saída por hora) agora **sobrevive a reinícios**. Antes, reiniciar o atuador zerava o limite. O gasto é gravado antes de ligar a saída; memória ilegível ou gravação com falha deixam o atuador em falha `self_test`. Nova variável `ACTUATOR_STATE_DIR` e [ADR 0007](docs/decisoes/0007-orcamento-do-atuador-sobrevive-a-reinicio.md).
 
 ## [0.1.0] - 2026-10-28

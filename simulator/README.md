@@ -15,6 +15,8 @@ O núcleo do atuador (`actuator_core.py`) é uma máquina de estados pura, sem r
 
 O orçamento de pulsos é guardado por uma porta (`actuator_budget.py`): um arquivo JSON em `ACTUATOR_STATE_DIR` (padrão `.pigeondome-state/`), para que um reinício não zere o limite. Não apague essa pasta.
 
+Os eventos também são gravados pelo próprio atuador (`actuator_journal.py`), na mesma pasta, em `actuator-<id>-events.jsonl` (JSON Lines, no formato do contrato). Para ler: `python -m pigeondome_sim.actuator_journal <arquivo>` ou `scripts\show-actuator-journal.ps1`.
+
 Para executar, use `scripts\run-simulator.ps1` e `scripts\run-actuator.ps1`. Veja [Operação](../docs/operacao.md).
 
 ## Testes
