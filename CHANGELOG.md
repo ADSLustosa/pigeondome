@@ -4,6 +4,10 @@ Segue o formato [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e [V
 
 ## [Não lançado]
 
+### Adicionado
+
+- [Dossiê do eletricista](docs/hardware/dossie-eletricista.md): rascunho do projeto elétrico da instalação de teste (arquitetura com cadeia de segurança em série, requisitos, riscos junto de placas solares, lista de materiais e comissionamento). É uma proposta para revisão profissional, não um projeto aprovado.
+
 ### Corrigido
 
 - O painel mostrava "conexão encerrada" também para um comando recusado com o atuador desconectado. O texto agora depende do tipo do evento ("atuador desconectado" na recusa). O contrato não mudou: o par evento + motivo já era inequívoco.
