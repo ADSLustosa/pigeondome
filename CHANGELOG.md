@@ -4,6 +4,10 @@ Segue o formato [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e [V
 
 ## [Não lançado]
 
+### Corrigido
+
+- A memória do orçamento do atuador **deslocava o horário dos pulsos antigos** a cada gravação quando o relógio de parede e o monotônico discordavam (por exemplo, depois de um ajuste da hora do sistema). Agora cada pulso mantém o horário em que foi registrado.
+
 ### Segurança
 
 - O atuador agora **guarda a sua própria trilha de eventos**, independente de rede, broker e controlador. Cada evento é gravado em disco (JSON Lines, no formato do contrato) antes de ligar a saída; se não for possível gravar, o atuador entra em falha `self_test` e não opera, mas continua podendo desligar. Rotação por tamanho (5 × 1 MiB). Novo script `show-actuator-journal.ps1` e [ADR 0008](docs/decisoes/0008-registro-de-eventos-no-proprio-atuador.md).

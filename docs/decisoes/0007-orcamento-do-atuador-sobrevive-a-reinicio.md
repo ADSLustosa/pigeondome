@@ -19,6 +19,7 @@ Regras, todas escolhendo o lado seguro:
 - **Memória ilegível ou duvidosa** (arquivo corrompido, de outro dispositivo, versão desconhecida): o atuador entra em falha `self_test`, guarda o arquivo ruim à parte para análise e presume que a hora seguinte já está **toda gasta**, mesmo depois de a falha sair.
 - **Relógio que voltou:** um pulso gravado "no futuro" conta inteiro, como se tivesse terminado agora. O orçamento nunca diminui por causa de um relógio errado.
 - O autoteste inclui confirmar que a memória grava, então um disco que não grava impede o atuador de operar já na partida.
+- **O horário gravado de cada pulso nunca é recalculado.** O orçamento é medido no relógio monotônico, mas a memória guarda o horário de parede de quando o pulso foi registrado. Ao religar, cada pulso restaurado leva consigo o seu horário original; regravar não o desloca. (Uma primeira versão reconvertia os pulsos a cada gravação, e um ajuste da hora do sistema os deslocava: num teste real, 2,6 s.)
 
 ## Consequências
 

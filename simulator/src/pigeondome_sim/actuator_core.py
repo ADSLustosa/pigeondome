@@ -21,6 +21,18 @@ from pigeondome_sim.actuator_budget import BudgetRecord, BudgetStore, BudgetStor
 from pigeondome_sim.actuator_journal import EventJournal, JournalEntry, JournalError
 
 
+@dataclass(frozen=True)
+class _Span:
+    """Um pulso já encerrado. O orçamento usa o relógio monotônico; a memória guarda o horário de
+    parede **como foi registrado**: ele nunca é recalculado, então um ajuste da hora do sistema
+    não desloca os pulsos antigos."""
+
+    start: float
+    end: float
+    wall_start: datetime
+    wall_end: datetime
+
+
 class State(StrEnum):
     SAFE_OFF = "safe_off"
     IDLE = "idle"
@@ -136,9 +148,10 @@ class ActuatorCore:
         self._fault: Fault | None = None
         self._pulse_start: float | None = None
         self._pulse_end: float | None = None
+        self._pulse_wall_start: datetime | None = None
         self._pulse_command_id: str | None = None
         self._cooldown_end: float | None = None
-        self._intervals: list[tuple[float, float]] = []
+        self._intervals: list[_Span] = []
         self._last_command_id: str | None = None
         self._seen: deque[str] = deque(maxlen=self._limits.seen_capacity)
         self._last_mono: float | None = None
@@ -168,8 +181,8 @@ class ActuatorCore:
         """Segundos com a saída ligada dentro da janela do orçamento (até `now`)."""
         window_start = now.mono_s - self._limits.budget_window_s
         used = 0.0
-        for start, end in self._intervals:
-            used += max(0.0, min(end, now.mono_s) - max(start, window_start))
+        for span in self._intervals:
+            used += max(0.0, min(span.end, now.mono_s) - max(span.start, window_start))
         if self._pulse_start is not None:
             used += max(0.0, now.mono_s - max(self._pulse_start, window_start))
         return used
@@ -210,44 +223,53 @@ class ActuatorCore:
             spent = timedelta(seconds=self._limits.budget_s)
             records = [BudgetRecord(start=now.wall - spent, end=now.wall)]
         window_start = now.mono_s - self._limits.budget_window_s
-        intervals: list[tuple[float, float]] = []
+        intervals: list[_Span] = []
         for record in records:
-            duration = max(0.0, (record.end - record.start).total_seconds())
-            age = max(0.0, (now.wall - record.end).total_seconds())
+            length = max(timedelta(0), record.end - record.start)
+            # Pulso "no futuro" (relógio que voltou): conta inteiro, terminando agora.
+            wall_end = min(record.end, now.wall)
+            age = (now.wall - wall_end).total_seconds()
             end = now.mono_s - age
             if end > window_start:
-                intervals.append((end - duration, end))
-        intervals.sort()
+                intervals.append(
+                    _Span(end - length.total_seconds(), end, wall_end - length, wall_end)
+                )
+        intervals.sort(key=lambda span: span.start)
         self._intervals = intervals
         if intervals:
-            cooldown_end = intervals[-1][1] + self._limits.cooldown_s
+            cooldown_end = intervals[-1].end + self._limits.cooldown_s
             if cooldown_end > now.mono_s:
                 self._cooldown_end = cooldown_end
         if unreadable:
             # Fixa a hipótese conservadora no disco, se der; se não der, a falha já está ativa.
             with contextlib.suppress(BudgetStoreError):
-                self._persist(now)
+                self._persist()
 
-    def _persist(self, now: Instant, extra: tuple[float, float] | None = None) -> None:
-        """Grava os pulsos (e o `extra`, se houver) no relógio de parede; ou BudgetStoreError."""
+    def _persist(self, extra: BudgetRecord | None = None) -> None:
+        """Grava os pulsos (e o `extra`, se houver); ou BudgetStoreError.
+
+        Os pulsos já encerrados vão com o horário de parede de quando foram registrados. O pulso
+        em curso vai com o fim PREVISTO.
+        """
         store = self._store
         if store is None:
             return
-        pulses = list(self._intervals)
-        if self._pulse_start is not None and self._pulse_end is not None:
-            pulses.append((self._pulse_start, self._pulse_end))
+        records = [BudgetRecord(span.wall_start, span.wall_end) for span in self._intervals]
+        if (
+            self._pulse_start is not None
+            and self._pulse_end is not None
+            and self._pulse_wall_start is not None
+        ):
+            planned = timedelta(seconds=self._pulse_end - self._pulse_start)
+            records.append(BudgetRecord(self._pulse_wall_start, self._pulse_wall_start + planned))
         if extra is not None:
-            pulses.append(extra)
+            records.append(extra)
+        store.save(records)
 
-        def wall(mono: float) -> datetime:
-            return now.wall - timedelta(seconds=now.mono_s - mono)
-
-        store.save([BudgetRecord(wall(start), wall(end)) for start, end in pulses])
-
-    def _persist_or_fault(self, now: Instant) -> bool:
+    def _persist_or_fault(self) -> bool:
         """Grava; se falhar, o atuador entra em falha `self_test`. Devolve se gravou."""
         try:
-            self._persist(now)
+            self._persist()
         except BudgetStoreError:
             if self._fault is None:
                 self._fault = Fault.SELF_TEST
@@ -336,7 +358,7 @@ class ActuatorCore:
         if cooldown_end is not None and now.mono_s >= cooldown_end:
             self._cooldown_end = None
         window_start = now.mono_s - self._limits.budget_window_s
-        self._intervals = [(s, e) for s, e in self._intervals if e > window_start]
+        self._intervals = [span for span in self._intervals if span.end > window_start]
         self._last_mono = now.mono_s
         return events
 
@@ -368,7 +390,8 @@ class ActuatorCore:
             return [self._reject(command.command_id, Reason.BUDGET_EXHAUSTED, now)]
         try:
             # Gravar ANTES de ligar: sem registro do pulso, não há pulso.
-            self._persist(now, extra=(now.mono_s, now.mono_s + duration))
+            planned = BudgetRecord(now.wall, now.wall + timedelta(seconds=duration))
+            self._persist(extra=planned)
         except BudgetStoreError:
             if self._fault is None:
                 self._fault = Fault.SELF_TEST
@@ -379,6 +402,7 @@ class ActuatorCore:
         if not self._record([accepted, started]):
             return [self._reject(command.command_id, Reason.FAULT, now)]
         self._pulse_start = now.mono_s
+        self._pulse_wall_start = now.wall
         self._pulse_end = now.mono_s + duration
         self._pulse_command_id = command.command_id
         self._last_command_id = command.command_id
@@ -413,16 +437,20 @@ class ActuatorCore:
             self._fault = Fault.CLOCK_INVALID
         elif not ok:
             self._fault = Fault.SELF_TEST
-        elif not self._persist_or_fault(now) or not self._check_journal():
+        elif not self._persist_or_fault() or not self._check_journal():
             return
         else:
             self._needs_reset = False
 
     def _close_pulse(self, at_mono: float) -> str | None:
         command_id = self._pulse_command_id
-        if self._pulse_start is not None:
-            self._intervals.append((self._pulse_start, max(self._pulse_start, at_mono)))
+        start, wall_start = self._pulse_start, self._pulse_wall_start
+        if start is not None and wall_start is not None:
+            end = max(start, at_mono)
+            wall_end = wall_start + timedelta(seconds=end - start)
+            self._intervals.append(_Span(start, end, wall_start, wall_end))
         self._pulse_start = None
+        self._pulse_wall_start = None
         self._pulse_end = None
         self._pulse_command_id = None
         self._cooldown_end = at_mono + self._limits.cooldown_s
@@ -430,12 +458,12 @@ class ActuatorCore:
 
     def _finish_pulse(self, at_mono: float, now: Instant) -> Event:
         command_id = self._close_pulse(at_mono)
-        self._persist_or_fault(now)
+        self._persist_or_fault()
         return self._emit(Event(EventType.PULSE_FINISHED, command_id, self._wall_at(now, at_mono)))
 
     def _abort_pulse(self, at_mono: float, now: Instant, reason: Reason) -> Event:
         command_id = self._close_pulse(at_mono)
-        self._persist_or_fault(now)
+        self._persist_or_fault()
         return self._emit(
             Event(EventType.PULSE_ABORTED, command_id, self._wall_at(now, at_mono), reason)
         )
