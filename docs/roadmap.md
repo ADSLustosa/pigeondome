@@ -16,6 +16,7 @@ O que existe, o que falta e, principalmente, **o que impede o uso com hardware r
 - [x] Painel responsivo (a partir de 320 px), nos temas claro e escuro, com a câmera simulada ao vivo
 - [x] Identidade visual e documentação técnica
 - [x] Orçamento do atuador que sobrevive a reinícios (simulado em arquivo; veja o [ADR 0007](decisoes/0007-orcamento-do-atuador-sobrevive-a-reinicio.md))
+- [x] Registro de eventos no próprio atuador, independente de rede (simulado em arquivo; veja o [ADR 0008](decisoes/0008-registro-de-eventos-no-proprio-atuador.md))
 - [x] Registro de mudanças, primeira versão marcada (`v0.1.0`) e política de segurança
 - [x] Dependabot e análise estática CodeQL no GitHub
 
@@ -27,7 +28,7 @@ Itens **bloqueantes**: sem eles, ligar o software a um dispositivo físico não 
 |---|---|
 | **Proteção física (camada 7)**: relé normalmente aberto, watchdog em hardware e limitação de corrente | Software sozinho não garante que a saída desligue se o processador travar. |
 | **Orçamento do atuador em memória realmente não volátil, no hardware** | No simulador ele já sobrevive a reinício, gravado em arquivo. Falta validar no componente escolhido: memória inacessível fora do firmware e desgaste da flash. |
-| **Registrador de eventos independente do controlador** | Hoje, com o controlador parado, os eventos do atuador não chegam ao banco. |
+| **Registro de eventos do atuador à prova de adulteração, no hardware** | No simulador o atuador já registra os eventos por conta própria, mas em arquivo comum. Falta memória inacessível fora do firmware e, idealmente, encadeamento por hash. |
 | **Avaliação de segurança elétrica** por profissional habilitado, conforme as normas aplicáveis | Nenhum projeto elétrico foi feito nem revisado. |
 | **Conformidade legal**: legislação ambiental e sanitária aplicável ao controle de aves | Não foi avaliada. |
 | **TLS no broker e autenticação na API** | Hoje tudo escuta só em `127.0.0.1`; qualquer exposição na rede precisa dos dois. |

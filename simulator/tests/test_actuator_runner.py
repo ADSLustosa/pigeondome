@@ -12,6 +12,7 @@ import pytest
 
 from pigeondome_sim import actuator_runner
 from pigeondome_sim.actuator_core import Instant
+from pigeondome_sim.actuator_journal import read_journal, unfinished_pulses
 from pigeondome_sim.actuator_messages import iso_utc
 from pigeondome_sim.actuator_runner import ActuatorRunner, ActuatorSettings, main, system_clock
 from pigeondome_sim.actuator_service import command_topic, events_topic, state_topic
@@ -138,6 +139,10 @@ def pulse_payload(n: int = 1, seconds: int = 5) -> bytes:
         "ttl_s": 10,
     }
     return json.dumps(document).encode()
+
+
+def pulse_payload_id(n: int) -> str:
+    return f"00000000-0000-4000-8000-{n:012d}"
 
 
 def deliver(client: FakeClient, payload: bytes) -> None:
@@ -322,6 +327,46 @@ def test_a_corrupt_memory_file_is_reported_as_a_self_test_fault(tmp_path: Path) 
     state = decoded(client, state_topic(DEVICE))[-1]
     assert (state["state"], state["fault"]) == ("fault", "self_test")
     assert list(tmp_path.glob("*.corrupt-*"))  # guardado à parte para análise
+
+
+def test_events_are_recorded_on_disk_even_while_the_broker_is_unreachable(
+    tmp_path: Path,
+) -> None:
+    _, client, _ = make_runner(state_dir=str(tmp_path))
+    connect(client)
+    deliver(client, pulse_payload(seconds=10))
+    client.on_disconnect(client, None, {}, REFUSED, None)  # a rede caiu no meio do pulso
+    published = [event["event"] for event in decoded(client, events_topic(DEVICE))]
+    journal = tmp_path / f"actuator-{DEVICE}-events.jsonl"
+    recorded = [json.loads(line)["event"] for line in journal.read_text("utf-8").splitlines()]
+    assert recorded == ["command_accepted", "pulse_started", "pulse_aborted"]
+    assert recorded[:2] == published  # o aborto offline ainda não foi ao MQTT, mas já está no disco
+
+
+def test_the_record_grows_across_restarts(tmp_path: Path) -> None:
+    _, first_client, _ = make_runner(state_dir=str(tmp_path))
+    connect(first_client)
+    deliver(first_client, pulse_payload(1, seconds=5))
+    client = FakeClient()
+    ActuatorRunner(settings(state_dir=str(tmp_path)), client=client, clock=RebootedClock())
+    client.on_connect(client, None, {}, OK, None)
+    journal = tmp_path / f"actuator-{DEVICE}-events.jsonl"
+    reading = read_journal(journal)
+    assert [item["event"] for item in reading.entries] == ["command_accepted", "pulse_started"]
+    assert unfinished_pulses(reading.entries) == [pulse_payload_id(1)]  # a marca da queda
+
+
+def test_a_record_that_cannot_be_written_stops_the_actuator_from_operating(
+    tmp_path: Path,
+) -> None:
+    (tmp_path / f"actuator-{DEVICE}-events.jsonl").mkdir()  # no lugar do arquivo
+    _, client, _ = make_runner(state_dir=str(tmp_path))
+    client.on_connect(client, None, {}, OK, None)
+    state = decoded(client, state_topic(DEVICE))[-1]
+    assert (state["state"], state["fault"]) == ("fault", "self_test")
+    client.published.clear()
+    deliver(client, pulse_payload())
+    assert decoded(client, events_topic(DEVICE))[-1]["reason_code"] == "fault"
 
 
 def test_without_a_state_folder_nothing_is_written(tmp_path: Path) -> None:

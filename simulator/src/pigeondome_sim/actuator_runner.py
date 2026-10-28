@@ -23,6 +23,7 @@ from paho.mqtt.enums import CallbackAPIVersion
 
 from pigeondome_sim.actuator_budget import FileBudgetStore
 from pigeondome_sim.actuator_core import ActuatorCore, Instant
+from pigeondome_sim.actuator_journal import FileEventJournal
 from pigeondome_sim.actuator_service import ActuatorService, Publication, command_topic
 
 log = logging.getLogger("pigeondome_sim.actuator")
@@ -40,7 +41,8 @@ class ActuatorSettings:
     device_id: str
     tick_s: float
     heartbeat_s: float
-    # Pasta da memória não volátil do orçamento. None: sem memória (o orçamento vive em RAM).
+    # Pasta da memória não volátil (orçamento e registro de eventos). None: sem memória, o
+    # orçamento vive em RAM e os eventos só saem pelo MQTT.
     state_dir: str | None = None
 
     @classmethod
@@ -101,10 +103,13 @@ class ActuatorRunner:
     @staticmethod
     def _new_service(settings: ActuatorSettings) -> ActuatorService:
         store = None
+        journal = None
         if settings.state_dir is not None:
-            path = Path(settings.state_dir) / f"actuator-{settings.device_id}.json"
-            store = FileBudgetStore(path, settings.device_id)
-        return ActuatorService(settings.device_id, ActuatorCore(store=store))
+            folder = Path(settings.state_dir)
+            name = f"actuator-{settings.device_id}"
+            store = FileBudgetStore(folder / f"{name}.json", settings.device_id)
+            journal = FileEventJournal(folder / f"{name}-events.jsonl", settings.device_id)
+        return ActuatorService(settings.device_id, ActuatorCore(store=store, journal=journal))
 
     def _new_client(self) -> mqtt.Client:
         # Sessão limpa: o broker não guarda comandos para um atuador desligado.

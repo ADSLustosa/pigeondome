@@ -5,17 +5,20 @@ forma determinística. Os limites pertencem ao atuador: nenhuma mensagem consegu
 Na dúvida, a saída fica desligada (fail-safe).
 
 O orçamento de pulsos pode ser guardado numa memória não volátil (`BudgetStore`), para sobreviver
-a reinícios. Sem memória configurada, o comportamento é o de sempre (tudo em RAM).
+a reinícios, e os eventos podem ser gravados num registro próprio (`EventJournal`), independente
+de rede. Sem eles configurados, o comportamento é o de sempre (tudo em RAM).
 """
 
 import contextlib
 import math
 from collections import deque
+from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from enum import StrEnum
 
 from pigeondome_sim.actuator_budget import BudgetRecord, BudgetStore, BudgetStoreError
+from pigeondome_sim.actuator_journal import EventJournal, JournalEntry, JournalError
 
 
 class State(StrEnum):
@@ -117,9 +120,15 @@ class Snapshot:
 class ActuatorCore:
     """Máquina de estados do atuador. A saída só liga dentro de um pulso aceito."""
 
-    def __init__(self, limits: Limits | None = None, store: BudgetStore | None = None) -> None:
+    def __init__(
+        self,
+        limits: Limits | None = None,
+        store: BudgetStore | None = None,
+        journal: EventJournal | None = None,
+    ) -> None:
         self._limits = limits if limits is not None else Limits()
         self._store = store
+        self._journal = journal
         self._budget_restored = False
         self._connected = False
         self._needs_reset = True  # recém-ligado: falta o autoteste da primeira conexão
@@ -364,19 +373,23 @@ class ActuatorCore:
             if self._fault is None:
                 self._fault = Fault.SELF_TEST
             return [self._reject(command.command_id, Reason.FAULT, now)]
+        accepted = Event(EventType.COMMAND_ACCEPTED, command.command_id, now.wall)
+        started = Event(EventType.PULSE_STARTED, command.command_id, now.wall)
+        # Gravar o evento ANTES de ligar: sem registro do pulso, não há pulso.
+        if not self._record([accepted, started]):
+            return [self._reject(command.command_id, Reason.FAULT, now)]
         self._pulse_start = now.mono_s
         self._pulse_end = now.mono_s + duration
         self._pulse_command_id = command.command_id
         self._last_command_id = command.command_id
-        return [
-            Event(EventType.COMMAND_ACCEPTED, command.command_id, now.wall),
-            Event(EventType.PULSE_STARTED, command.command_id, now.wall),
-        ]
+        return [accepted, started]
 
     def _stop(self, command: Command, now: Instant) -> list[Event]:
         """Parar é sempre aceito: sem validar validade, repetição nem formato."""
         self._last_command_id = command.command_id or None
-        events = [Event(EventType.COMMAND_ACCEPTED, command.command_id or None, now.wall)]
+        events = [
+            self._emit(Event(EventType.COMMAND_ACCEPTED, command.command_id or None, now.wall))
+        ]
         events.extend(self._abort_if_pulsing(now, Reason.STOP_COMMAND))
         return events
 
@@ -400,7 +413,7 @@ class ActuatorCore:
             self._fault = Fault.CLOCK_INVALID
         elif not ok:
             self._fault = Fault.SELF_TEST
-        elif not self._persist_or_fault(now):
+        elif not self._persist_or_fault(now) or not self._check_journal():
             return
         else:
             self._needs_reset = False
@@ -418,12 +431,14 @@ class ActuatorCore:
     def _finish_pulse(self, at_mono: float, now: Instant) -> Event:
         command_id = self._close_pulse(at_mono)
         self._persist_or_fault(now)
-        return Event(EventType.PULSE_FINISHED, command_id, self._wall_at(now, at_mono))
+        return self._emit(Event(EventType.PULSE_FINISHED, command_id, self._wall_at(now, at_mono)))
 
     def _abort_pulse(self, at_mono: float, now: Instant, reason: Reason) -> Event:
         command_id = self._close_pulse(at_mono)
         self._persist_or_fault(now)
-        return Event(EventType.PULSE_ABORTED, command_id, self._wall_at(now, at_mono), reason)
+        return self._emit(
+            Event(EventType.PULSE_ABORTED, command_id, self._wall_at(now, at_mono), reason)
+        )
 
     def _abort_if_pulsing(self, now: Instant, reason: Reason) -> list[Event]:
         if self._pulse_end is None:
@@ -434,6 +449,47 @@ class ActuatorCore:
     def _wall_at(now: Instant, mono_s: float) -> datetime:
         return now.wall - timedelta(seconds=now.mono_s - mono_s)
 
-    @staticmethod
-    def _reject(command_id: str | None, reason: Reason, now: Instant) -> Event:
-        return Event(EventType.COMMAND_REJECTED, command_id, now.wall, reason)
+    def _reject(self, command_id: str | None, reason: Reason, now: Instant) -> Event:
+        return self._emit(Event(EventType.COMMAND_REJECTED, command_id, now.wall, reason))
+
+    # --- registro de eventos ---------------------------------------------------------------
+
+    def _record(self, events: Sequence[Event]) -> bool:
+        """Grava no registro. Se falhar, o atuador entra em falha `self_test`: sem registro, sem
+        operação. Devolve se gravou. Só impede LIGAR; desligar nunca depende do registro."""
+        journal = self._journal
+        if journal is None:
+            return True
+        entries = [
+            JournalEntry(
+                event.type.value,
+                event.command_id,
+                event.at,
+                event.reason.value if event.reason is not None else None,
+            )
+            for event in events
+        ]
+        try:
+            journal.append(entries)
+        except JournalError:
+            if self._fault is None:
+                self._fault = Fault.SELF_TEST
+            return False
+        return True
+
+    def _emit(self, event: Event) -> Event:
+        """Registra um evento que já aconteceu (a saída já está como está) e o devolve."""
+        self._record([event])
+        return event
+
+    def _check_journal(self) -> bool:
+        journal = self._journal
+        if journal is None:
+            return True
+        try:
+            journal.check()
+        except JournalError:
+            if self._fault is None:
+                self._fault = Fault.SELF_TEST
+            return False
+        return True
