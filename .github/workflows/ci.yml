@@ -26,7 +26,7 @@ jobs:
           --health-timeout 3s
           --health-retries 10
     env:
-      # credencial descartÃ¡vel de um banco efÃªmero que sÃ³ existe durante o job
+      # credencial descartável de um banco efêmero que só existe durante o job
       PIGEONDOME_TEST_DSN: postgresql://pigeon:pigeon_ci@127.0.0.1:5432/pigeondome # gitleaks:allow
     defaults:
       run:
