@@ -4,6 +4,10 @@ Segue o formato [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e [V
 
 ## [Não lançado]
 
+## [0.1.0] - 2026-10-28
+
+Primeira versão publicada: um protótipo **simulado**. Nenhum hardware foi construído ou avaliado.
+
 ### Adicionado
 
 - Plataforma simulada de ponta a ponta: câmera, atuador, ingestor, controlador, API e painel, ligados por MQTT (Mosquitto, permissões por papel) e PostgreSQL.
@@ -13,8 +17,12 @@ Segue o formato [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e [V
 - Documentação técnica em `docs/`, com registros de decisão, e READMEs de pasta.
 - Identidade visual do projeto aplicada ao painel e aos READMEs, em português e inglês.
 - Política de segurança, guia de participação, modelos de issue e de pull request, `CODEOWNERS`, Dependabot e análise CodeQL.
+- Capturas do painel (claro, escuro, página completa e celular) nos READMEs, e script de captura por emulação de dispositivo.
 
 ### Alterado
 
 - Licença: de MIT para **proprietária** (todos os direitos reservados). O código publicado até o commit `17696d4` continua disponível sob a MIT, nos termos descritos na [`LICENSE`](LICENSE).
 - `main` protegida: mudanças só por pull request, com os checks `backend`, `simulator` e `dashboard`, e merge por squash.
+
+[Não lançado]: https://github.com/ADSLustosa/pigeondome/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/ADSLustosa/pigeondome/releases/tag/v0.1.0
