@@ -419,3 +419,49 @@ def test_a_corrupt_file_is_logged_with_where_it_was_kept(
     text = caplog.text
     assert "não é confiável" in text
     assert ".corrupt-" in text
+
+
+# --- o horário gravado não depende de o relógio de parede concordar com o monotônico ---------
+
+
+def test_a_restored_pulse_keeps_its_recorded_time_when_the_wall_clock_drifts() -> None:
+    original = BudgetRecord(BASE - timedelta(seconds=45), BASE - timedelta(seconds=35))
+    store = InMemoryBudgetStore([original])
+    core = ActuatorCore(store=store)
+    core.restore_budget(Instant(MONO0, BASE))
+    # 3 s depois (relógio monotônico), o de parede andou só 0,4 s (ajuste de hora do sistema)
+    core.connection_restored(Instant(MONO0 + 3, BASE + timedelta(seconds=0.4)))
+    assert store.load() == [original]
+
+
+def test_older_pulses_keep_their_exact_times_through_later_saves() -> None:
+    records = [
+        BudgetRecord(BASE - timedelta(seconds=300), BASE - timedelta(seconds=290.123456)),
+        BudgetRecord(BASE - timedelta(seconds=100), BASE - timedelta(seconds=94.5)),
+    ]
+    store = InMemoryBudgetStore(records)
+    core = ActuatorCore(store=store)
+    core.restore_budget(at(0))
+    core.connection_restored(at(1))
+
+    def lagging(seconds: int) -> Instant:  # o relógio de parede atrasa 0,3 s a cada segundo
+        return Instant(MONO0 + seconds, BASE + timedelta(seconds=seconds * 0.7))
+
+    core.handle_command(pulse(1, duration=2, issued=2), lagging(2))
+    core.tick(lagging(4))  # o pulso termina: nova gravação
+    assert store.load()[:2] == records
+
+
+def test_a_pulse_is_recorded_with_the_wall_time_of_its_acceptance_and_its_real_length() -> None:
+    store = InMemoryBudgetStore()
+    core = booted(store)
+    core.handle_command(pulse(1, duration=10), at(0))
+    # o relógio de parede dá um salto de 100 s para a frente enquanto o pulso corre
+    core.tick(Instant(MONO0 + 4, BASE + timedelta(seconds=104)))
+    stop = Command(
+        "00000000-0000-4000-8000-000000000009", Action.STOP, BASE, ttl_s=10, duration_s=None
+    )
+    core.handle_command(stop, Instant(MONO0 + 4, BASE + timedelta(seconds=104)))
+    (record,) = store.load()
+    assert record.start == BASE  # a hora de parede de quando o pulso foi aceito
+    assert record.end - record.start == timedelta(seconds=4)  # a duração medida pelo monotônico

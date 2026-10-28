@@ -58,6 +58,7 @@ Sem isto, reiniciar o atuador zeraria o limite de 120 s por hora. O gasto é gua
 | Não consegue gravar ao aceitar um comando | Recusa o comando (`fault`) e entra em falha `self_test`. |
 | Arquivo corrompido, de outro dispositivo ou de versão desconhecida | Falha `self_test`, guarda o arquivo ruim à parte (`*.corrupt-*`) e presume a próxima hora como **toda gasta**. |
 | Relógio de parede voltou no tempo | Pulso gravado "no futuro" conta inteiro, como se tivesse terminado agora. |
+| Hora do sistema ajustada com o atuador ligado | Os pulsos já gravados mantêm o horário original; só o pulso novo usa a hora corrente. |
 | Primeira execução (sem arquivo) | Começa com orçamento zero e confirma que consegue gravar. |
 
 No simulador não há botão de reset: **reiniciar o processo do atuador** faz o papel do reset local, depois de corrigir a causa (pasta sem permissão, disco cheio, arquivo ruim).
