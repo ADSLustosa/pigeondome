@@ -1,0 +1,47 @@
+name: Erro
+description: Algo não funciona como a documentação diz
+title: "erro: "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Não publique dados pessoais**: imagens de câmeras com pessoas, senhas, tokens ou conteúdo do `.env`.
+        Para falhas de segurança, use o [relato privado](https://github.com/ADSLustosa/pigeondome/security/advisories/new).
+  - type: dropdown
+    id: componente
+    attributes:
+      label: Componente
+      options: [Broker (Mosquitto), Ingestor, Controlador, Atuador simulado, Câmera simulada, API, Painel, Documentação, Outro]
+    validations:
+      required: true
+  - type: textarea
+    id: esperado
+    attributes:
+      label: O que você esperava
+    validations:
+      required: true
+  - type: textarea
+    id: observado
+    attributes:
+      label: O que aconteceu
+      description: Cole só as linhas relevantes do log, sem dados pessoais.
+    validations:
+      required: true
+  - type: textarea
+    id: passos
+    attributes:
+      label: Passos para reproduzir
+      placeholder: "1. ...\n2. ...\n3. ..."
+    validations:
+      required: true
+  - type: input
+    id: versao
+    attributes:
+      label: Commit ou versão
+      placeholder: "git rev-parse --short HEAD"
+  - type: input
+    id: ambiente
+    attributes:
+      label: Sistema operacional e versões
+      placeholder: "Windows 11, Python 3.12, Node 24, Docker Desktop"

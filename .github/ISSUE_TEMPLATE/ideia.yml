@@ -1,0 +1,26 @@
+name: Ideia ou dúvida
+description: Sugestão de melhoria ou pergunta sobre o projeto
+title: "ideia: "
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Este projeto tem licença proprietária e não aceita pull requests de código de terceiros (veja o [CONTRIBUTING](https://github.com/ADSLustosa/pigeondome/blob/main/CONTRIBUTING.md)). Ideias e perguntas são bem-vindas.
+        Confira antes o [roadmap](https://github.com/ADSLustosa/pigeondome/blob/main/docs/roadmap.md).
+  - type: textarea
+    id: problema
+    attributes:
+      label: Qual problema isso resolve?
+    validations:
+      required: true
+  - type: textarea
+    id: proposta
+    attributes:
+      label: O que você propõe
+    validations:
+      required: true
+  - type: textarea
+    id: alternativas
+    attributes:
+      label: Alternativas consideradas

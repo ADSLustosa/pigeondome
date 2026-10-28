@@ -1,0 +1,11 @@
+# Todo o repositório tem um único responsável.
+* @ADSLustosa
+
+# Partes em que uma mudança pode afetar a segurança do atuador ou o acesso ao broker.
+/contracts/                      @ADSLustosa
+/infra/mosquitto/                @ADSLustosa
+/simulator/src/                  @ADSLustosa
+/docs/seguranca-do-atuador.md    @ADSLustosa
+/SECURITY.md                     @ADSLustosa
+/LICENSE                         @ADSLustosa
+/.github/                        @ADSLustosa
