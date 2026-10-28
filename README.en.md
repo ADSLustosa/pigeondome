@@ -192,6 +192,12 @@ The database stores device identifiers, counts, decisions and reasons: no person
 - [ ] Hardware: bill of materials, electrical design and standards assessment
 - [ ] Real on-device pigeon detector
 
+## Security and contributing
+
+- Found a flaw? Report it **privately**, following the [security policy](SECURITY.md).
+- Bugs and ideas go through [issues](https://github.com/ADSLustosa/pigeondome/issues/new/choose). Third-party code pull requests are not accepted, see [CONTRIBUTING](CONTRIBUTING.md).
+- Notable changes are in the [changelog](CHANGELOG.md) (in Portuguese).
+
 ## License
 
 The source code is available for **viewing**. This project is **neither free nor open-source software**: all rights are reserved. Running, copying, modifying or distributing it requires the owner's written authorization or a purchase. Details, and the licensing history, in [`LICENSE`](LICENSE).

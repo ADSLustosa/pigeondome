@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Vulnerabilidade de segurança
+    url: https://github.com/ADSLustosa/pigeondome/security/advisories/new
+    about: Não abra issue pública. Relate de forma privada.
+  - name: Documentação
+    url: https://github.com/ADSLustosa/pigeondome/tree/main/docs
+    about: Arquitetura, contratos, API, operação e roadmap.

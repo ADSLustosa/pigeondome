@@ -1,0 +1,20 @@
+# Histórico de mudanças
+
+Segue o formato [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e [Versionamento Semântico](https://semver.org/lang/pt-BR/).
+
+## [Não lançado]
+
+### Adicionado
+
+- Plataforma simulada de ponta a ponta: câmera, atuador, ingestor, controlador, API e painel, ligados por MQTT (Mosquitto, permissões por papel) e PostgreSQL.
+- Contratos JSON Schema versionados para detecção, comando, estado e evento do atuador.
+- Sete camadas de segurança do atuador: chave geral no banco, modo seco por padrão, política, contrato do comando, limites do atuador, estado seguro pela última vontade do broker e proteção física (planejada).
+- API de leitura com erros em `application/problem+json` (RFC 9457) e painel responsivo com câmera simulada ao vivo.
+- Documentação técnica em `docs/`, com registros de decisão, e READMEs de pasta.
+- Identidade visual do projeto aplicada ao painel e aos READMEs, em português e inglês.
+- Política de segurança, guia de participação, modelos de issue e de pull request, `CODEOWNERS`, Dependabot e análise CodeQL.
+
+### Alterado
+
+- Licença: de MIT para **proprietária** (todos os direitos reservados). O código publicado até o commit `17696d4` continua disponível sob a MIT, nos termos descritos na [`LICENSE`](LICENSE).
+- `main` protegida: mudanças só por pull request, com os checks `backend`, `simulator` e `dashboard`, e merge por squash.

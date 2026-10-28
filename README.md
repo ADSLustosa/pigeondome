@@ -192,6 +192,12 @@ O banco guarda identificadores de dispositivos, contagens, decisões e motivos: 
 - [ ] Hardware: lista de materiais, projeto elétrico e avaliação normativa
 - [ ] Detector real de pombos no dispositivo de borda
 
+## Segurança e participação
+
+- Encontrou uma falha? Relate de forma **privada**, conforme a [política de segurança](SECURITY.md).
+- Erros e ideias entram por [issues](https://github.com/ADSLustosa/pigeondome/issues/new/choose). Pull requests de código de terceiros não são aceitos, veja o [guia de participação](CONTRIBUTING.md).
+- As mudanças relevantes estão no [histórico de mudanças](CHANGELOG.md).
+
 ## Licença
 
 O código-fonte está disponível para **consulta**. Este projeto **não é software livre nem de código aberto**: todos os direitos são reservados. Executar, copiar, modificar ou distribuir exige autorização escrita do titular ou compra. Detalhes, e o histórico de licenciamento, em [`LICENSE`](LICENSE).
