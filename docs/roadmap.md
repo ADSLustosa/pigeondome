@@ -43,9 +43,9 @@ Itens **bloqueantes**: sem eles, ligar o software a um dispositivo físico não 
 
 ### Hardware
 
-- [ ] Lista de materiais (BOM) e projeto elétrico
+- [ ] Lista de materiais (BOM) e projeto elétrico: há um **rascunho** no [dossiê do eletricista](hardware/dossie-eletricista.md), ainda sem revisão profissional nem validação em bancada
 - [ ] Avaliação normativa do projeto
-- [ ] Firmware do atuador (ESP32 é o alvo planejado) com a mesma máquina de estados do simulador
+- [ ] Atuador em hardware com a mesma máquina de estados do simulador: a **primeira instalação de teste usa um Raspberry Pi**, que roda o código Python já testado; o ESP32 continua sendo o alvo de um produto futuro, e exigiria reescrever o núcleo
 
 ### Robustez
 

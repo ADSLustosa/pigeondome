@@ -16,6 +16,7 @@ Documentação técnica do Pigeondome. Ela descreve **o que o código faz hoje**
 | Consultar a API | [API](api.md) |
 | Subir o ambiente e operar a chave geral | [Operação](operacao.md) |
 | Saber o que falta antes de usar com hardware real | [Roadmap](roadmap.md) |
+| Preparar a instalação de teste com um eletricista | [Dossiê do eletricista](hardware/dossie-eletricista.md) |
 | Entender por que uma escolha foi feita | [Decisões de arquitetura](decisoes/README.md) |
 | Usar a identidade visual | [Guia de marca](brand/README.md) |
 
