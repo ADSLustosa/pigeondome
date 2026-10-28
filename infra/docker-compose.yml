@@ -2,7 +2,7 @@ name: pigeondome
 
 services:
   mosquitto:
-    image: eclipse-mosquitto:2.0.20
+    image: eclipse-mosquitto:2.0.22
     container_name: pigeondome-mqtt
     restart: unless-stopped
     security_opt:
