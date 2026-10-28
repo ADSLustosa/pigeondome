@@ -116,7 +116,15 @@ export const eventInfo = (event: string): Labeled =>
 
 export const armLabel = (arm: string): string => ARMS.get(arm) ?? arm
 
-export const reasonCodeText = (code: string): string => REASON_CODES.get(code) ?? code
+/**
+ * O motivo `disconnected` vale para dois eventos: no aborto, a conexão caiu durante o pulso; na
+ * recusa, o comando chegou com o atuador desconectado. O par evento + motivo é inequívoco, então
+ * o texto depende do evento, e o contrato não muda.
+ */
+export function reasonCodeText(code: string, event?: string): string {
+  if (code === 'disconnected' && event === 'command_rejected') return 'atuador desconectado'
+  return REASON_CODES.get(code) ?? code
+}
 
 /** O motivo da decisão, com o detalhe entre parênteses (ex.: o estado do atuador). */
 export function reasonText(reason: string, detail: string): string {

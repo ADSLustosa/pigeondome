@@ -86,6 +86,8 @@ Trilha de auditoria de cada comando: `command_accepted`, `command_rejected`, `pu
 
 `reason_code` é **obrigatório** em `command_rejected` e `pulse_aborted`, e **proibido** nos outros. Valores: `expired`, `duplicate`, `busy`, `cooldown`, `budget_exhausted`, `maintenance`, `fault`, `invalid_command`, `stop_command`, `disconnected` e `watchdog`.
 
+O motivo `disconnected` aparece em dois eventos, e o par evento + motivo é inequívoco: em `pulse_aborted`, a conexão caiu durante o pulso; em `command_rejected`, o comando chegou com o atuador desconectado. Quem exibe o motivo deve levar o evento em conta.
+
 ## Versionamento (convenção do projeto)
 
 - A versão está no tópico (`v1`) e no campo `schema_version` de cada mensagem.

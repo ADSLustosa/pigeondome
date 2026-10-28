@@ -49,7 +49,7 @@ Itens **bloqueantes**: sem eles, ligar o software a um dispositivo físico não 
 
 ### Robustez
 
-- [ ] Separar o motivo `disconnected` em duas situações: conexão que cai e comando recebido com o atuador desconectado
+- [x] Motivo `disconnected` de duas situações (conexão que cai, comando recebido com o atuador desconectado): resolvido sem mudar o contrato, pois o par evento + motivo já é inequívoco e o painel mostra o texto certo para cada um
 - [ ] Política de retenção e eliminação de dados antigos
 - [ ] Pausar a consulta do painel com a aba escondida em todos os blocos (hoje só a câmera faz isso)
 

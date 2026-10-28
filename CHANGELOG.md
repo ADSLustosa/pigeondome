@@ -6,6 +6,7 @@ Segue o formato [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e [V
 
 ### Corrigido
 
+- O painel mostrava "conexão encerrada" também para um comando recusado com o atuador desconectado. O texto agora depende do tipo do evento ("atuador desconectado" na recusa). O contrato não mudou: o par evento + motivo já era inequívoco.
 - A memória do orçamento do atuador **deslocava o horário dos pulsos antigos** a cada gravação quando o relógio de parede e o monotônico discordavam (por exemplo, depois de um ajuste da hora do sistema). Agora cada pulso mantém o horário em que foi registrado.
 
 ### Segurança
