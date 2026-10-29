@@ -87,6 +87,8 @@ A ordem das regras importa: as que **impedem** vêm antes, e o modo seco fica po
 | 10 | `dry_run` | modo seco: registra `would_pulse` e não envia nada |
 | 11 | `evidence_confirmed` | tudo permite: envia o pulso |
 
+A evidência pode vir da câmera (contagem e confiança) ou de um sensor de presença (só presente ou ausente, sem confiança), conforme `PolicyConfig.source`. As regras de segurança são as mesmas nos dois casos; ver a [ADR 0009](decisoes/0009-sensor-de-presenca-como-fonte-de-evidencia.md). O sensor ainda não tem contrato MQTT nem armazenamento.
+
 Os valores acima são os padrões de `PolicyConfig` e podem ser ajustados por variáveis de ambiente (veja [Operação](operacao.md)). Quando um parâmetro foge do que o atuador aceita (por exemplo, um pulso de mais de 10 s), a configuração é recusada na partida.
 
 ## Idempotência

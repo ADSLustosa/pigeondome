@@ -2,7 +2,7 @@
 
 Segue o formato [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
-## [Não lançado]
+## [Não lançado][Não lançado]
 
 ### Adicionado
 
@@ -18,7 +18,7 @@ Segue o formato [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e [V
 - O atuador agora **guarda a sua própria trilha de eventos**, independente de rede, broker e controlador. Cada evento é gravado em disco (JSON Lines, no formato do contrato) antes de ligar a saída; se não for possível gravar, o atuador entra em falha `self_test` e não opera, mas continua podendo desligar. Rotação por tamanho (5 × 1 MiB). Novo script `show-actuator-journal.ps1` e [ADR 0008](docs/decisoes/0008-registro-de-eventos-no-proprio-atuador.md).
 - O orçamento do atuador (120 s de saída por hora) agora **sobrevive a reinícios**. Antes, reiniciar o atuador zerava o limite. O gasto é gravado antes de ligar a saída; memória ilegível ou gravação com falha deixam o atuador em falha `self_test`. Nova variável `ACTUATOR_STATE_DIR` e [ADR 0007](docs/decisoes/0007-orcamento-do-atuador-sobrevive-a-reinicio.md).
 
-## [0.1.0] - 2026-10-28
+## [0.1.0][0.1.0] - 2026-10-28
 
 Primeira versão publicada: um protótipo **simulado**. Nenhum hardware foi construído ou avaliado.
 
@@ -37,6 +37,4 @@ Primeira versão publicada: um protótipo **simulado**. Nenhum hardware foi cons
 
 - Licença: de MIT para **proprietária** (todos os direitos reservados). O código publicado até o commit `17696d4` continua disponível sob a MIT, nos termos descritos na [`LICENSE`](LICENSE).
 - `main` protegida: mudanças só por pull request, com os checks `backend`, `simulator` e `dashboard`, e merge por squash.
-
-[Não lançado]: https://github.com/ADSLustosa/pigeondome/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/ADSLustosa/pigeondome/releases/tag/v0.1.0
+- A política do controlador aceita um **sensor de presença** como fonte da evidência, além da câmera (`PolicyConfig.source`; o padrão continua sendo a câmera, sem mudança de comportamento). É o gatilho da versão básica, sem câmera. O sensor só diz "presente" ou "ausente", então tem modelo próprio, confirma por leituras positivas na janela e **não vale como "pombo"**: não distingue pombo de pessoa. Todas as regras de segurança continuam valendo, e sensor parado é dado velho, não ausência. Ainda não há contrato MQTT nem armazenamento para o sensor. [ADR 0009](docs/decisoes/0009-sensor-de-presenca-como-fonte-de-evidencia.md).
