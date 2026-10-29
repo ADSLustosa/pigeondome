@@ -12,6 +12,7 @@ Registros curtos (ADR) das escolhas que mais pesam no projeto: o contexto, o que
 | 0006 | [Permissões do broker por papel](0006-permissoes-do-broker-por-papel.md) |
 | 0007 | [O orçamento do atuador sobrevive a reinícios](0007-orcamento-do-atuador-sobrevive-a-reinicio.md) |
 | 0008 | [O atuador mantém o seu próprio registro de eventos](0008-registro-de-eventos-no-proprio-atuador.md) |
+| 0009 | [O sensor de presença é uma fonte de evidência](0009-sensor-de-presenca-como-fonte-de-evidencia.md) |
 
 ## Como acrescentar uma decisão
 

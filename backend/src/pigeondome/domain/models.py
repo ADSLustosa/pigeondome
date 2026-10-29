@@ -37,6 +37,25 @@ class Detection:
 
 
 @dataclass(frozen=True)
+class PresenceReading:
+    """Uma leitura de sensor de presença: algo está (ou não) na zona vigiada, em um instante.
+
+    Diferente da `Detection`, o sensor NÃO sabe o que viu: pode ser um pombo, outra ave, uma
+    pessoa ou o vento. Por isso não tem contagem de pombos nem confiança, e o nome não finge.
+    """
+
+    device_id: str
+    timestamp: datetime
+    present: bool
+
+    def __post_init__(self) -> None:
+        if not DEVICE_ID_PATTERN.fullmatch(self.device_id):
+            raise InvalidDetectionError(f"device_id inválido: {self.device_id!r}")
+        if self.timestamp.tzinfo is None:
+            raise InvalidDetectionError("timestamp precisa ter fuso horário")
+
+
+@dataclass(frozen=True)
 class PresenceStats:
     """Resumo de presença de pombos em uma janela de tempo."""
 

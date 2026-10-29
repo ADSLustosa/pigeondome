@@ -12,7 +12,7 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from enum import StrEnum
 
-from pigeondome.domain.models import Detection
+from pigeondome.domain.models import Detection, PresenceReading
 
 
 class Mode(StrEnum):
@@ -42,6 +42,16 @@ class Reason(StrEnum):
     EVIDENCE_CONFIRMED = "evidence_confirmed"
 
 
+class EvidenceSource(StrEnum):
+    """De onde vem a evidência de que há pombo. As regras de segurança valem para qualquer uma."""
+
+    CAMERA = "camera"  # contagem de pombos e confiança, por imagem
+    PRESENCE_SENSOR = "presence_sensor"  # só presente/ausente: não distingue pombo de pessoa
+
+
+Reading = Detection | PresenceReading
+
+
 class Arm(StrEnum):
     TREATMENT = "treatment"
     CONTROL = "control"
@@ -56,6 +66,8 @@ class PolicyConfig:
     window_s: float = 30.0
     min_detections: int = 3
     min_confidence: float = 0.7
+    source: EvidenceSource = EvidenceSource.CAMERA
+    presence_min_positive: int = 3  # sensor: leituras "presente" na janela para confirmar
     max_data_age_s: float = 15.0
     max_actuator_report_age_s: float = 30.0
     retry_gap_s: float = 120.0
@@ -71,6 +83,8 @@ class PolicyConfig:
             raise ValueError("pulse_s precisa ficar entre 1 e 10 s (limite do atuador)")
         if self.min_detections < 1:
             raise ValueError("min_detections precisa ser pelo menos 1")
+        if self.presence_min_positive < 1:
+            raise ValueError("presence_min_positive precisa ser pelo menos 1")
         if not 0.0 <= self.min_confidence <= 1.0:
             raise ValueError("min_confidence precisa ficar entre 0 e 1")
         if min(self.window_s, self.max_data_age_s, self.max_actuator_report_age_s) <= 0:
@@ -107,11 +121,15 @@ class PolicyContext:
 
 @dataclass(frozen=True)
 class Evidence:
+    """Resumo da janela. Com o sensor, "com pombo" significa "com presença" e a confiança não
+    se aplica (fica em 0 e a política a ignora)."""
+
     readings: int
-    detections: int  # leituras COM pombo dentro da janela
-    mean_confidence: float  # só das leituras com pombo
-    latest_age_s: float | None  # idade da leitura mais recente, com ou sem pombo
-    latest_has_pigeons: bool
+    detections: int  # leituras COM pombo (câmera) ou COM presença (sensor) dentro da janela
+    mean_confidence: float  # só das leituras positivas; sempre 0 no sensor
+    latest_age_s: float | None  # idade da leitura mais recente, positiva ou não
+    latest_has_pigeons: bool  # a leitura mais recente é positiva
+    source: EvidenceSource = EvidenceSource.CAMERA
 
 
 @dataclass(frozen=True)
@@ -129,22 +147,52 @@ class Decision:
         return self.verdict is not Verdict.SKIP or self.reason is Reason.EXPERIMENT_CONTROL
 
 
-def gather_evidence(config: PolicyConfig, now: datetime, readings: Sequence[Detection]) -> Evidence:
+def _observations(
+    source: EvidenceSource, readings: Sequence[Reading]
+) -> list[tuple[datetime, bool, float]]:
+    """(instante, positiva?, confiança) só das leituras da fonte configurada.
+
+    Leituras de outra fonte são ignoradas: um sensor nunca confirma o que a câmera não viu, nem
+    o contrário, e uma troca de fonte não reaproveita dados da fonte antiga.
+    """
+    if source is EvidenceSource.CAMERA:
+        return [
+            (r.timestamp, r.has_pigeons, r.confidence) for r in readings if isinstance(r, Detection)
+        ]
+    return [(r.timestamp, r.present, 0.0) for r in readings if isinstance(r, PresenceReading)]
+
+
+def gather_evidence(config: PolicyConfig, now: datetime, readings: Sequence[Reading]) -> Evidence:
     window_start = now - timedelta(seconds=config.window_s)
     recent = sorted(
-        (r for r in readings if window_start <= r.timestamp <= now), key=lambda r: r.timestamp
+        (o for o in _observations(config.source, readings) if window_start <= o[0] <= now),
+        key=lambda o: o[0],
     )
-    with_pigeons = [r for r in recent if r.has_pigeons]
-    mean_confidence = (
-        sum(r.confidence for r in with_pigeons) / len(with_pigeons) if with_pigeons else 0.0
-    )
+    positive = [o for o in recent if o[1]]
+    mean_confidence = sum(o[2] for o in positive) / len(positive) if positive else 0.0
     latest = recent[-1] if recent else None
     return Evidence(
         readings=len(recent),
-        detections=len(with_pigeons),
+        detections=len(positive),
         mean_confidence=mean_confidence,
-        latest_age_s=(now - latest.timestamp).total_seconds() if latest else None,
-        latest_has_pigeons=latest.has_pigeons if latest else False,
+        latest_age_s=(now - latest[0]).total_seconds() if latest else None,
+        latest_has_pigeons=latest[1] if latest else False,
+        source=config.source,
+    )
+
+
+def evidence_is_sufficient(config: PolicyConfig, evidence: Evidence) -> bool:
+    """A câmera exige contagem e confiança; o sensor, só leituras de presença suficientes.
+
+    Nos dois casos a leitura mais recente precisa ser positiva: a presença acabou, não pulsa.
+    """
+    if not evidence.latest_has_pigeons:
+        return False
+    if config.source is EvidenceSource.PRESENCE_SENSOR:
+        return evidence.detections >= config.presence_min_positive
+    return (
+        evidence.detections >= config.min_detections
+        and evidence.mean_confidence >= config.min_confidence
     )
 
 
@@ -189,7 +237,7 @@ def actuator_problem(config: PolicyConfig, now: datetime, actuator: ActuatorStat
 def decide(
     config: PolicyConfig,
     now: datetime,
-    readings: Sequence[Detection],
+    readings: Sequence[Reading],
     actuator: ActuatorStatus,
     context: PolicyContext,
 ) -> Decision:
@@ -205,11 +253,7 @@ def decide(
         return skip(Reason.KILL_SWITCH)
     if evidence.latest_age_s is None or evidence.latest_age_s > config.max_data_age_s:
         return skip(Reason.STALE_DATA)
-    if (
-        evidence.detections < config.min_detections
-        or evidence.mean_confidence < config.min_confidence
-        or not evidence.latest_has_pigeons
-    ):
+    if not evidence_is_sufficient(config, evidence):
         return skip(Reason.INSUFFICIENT_EVIDENCE)
     local = now.astimezone(timezone(timedelta(hours=config.utc_offset_hours)))
     if in_quiet_hours(config, local.hour):
