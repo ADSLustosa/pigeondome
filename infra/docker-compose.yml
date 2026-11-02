@@ -14,7 +14,7 @@ services:
       - mosquitto_data:/mosquitto/data
 
   db:
-    image: postgres:17-alpine
+    image: postgres:18-alpine
     container_name: pigeondome-db
     restart: unless-stopped
     security_opt:
